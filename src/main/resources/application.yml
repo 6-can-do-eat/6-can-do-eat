@@ -1,0 +1,4 @@
+spring:
+  application:
+    name: six-can-do-eat
+
