@@ -3,9 +3,15 @@ package com.team6.backend.global.infrastructure.config.security.jwt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthUtils {
+
+    public String getRole(String token) {
+        return jwtUtil.getRole(token);
+    }
 
     private final JwtUtil jwtUtil;
 
@@ -19,7 +25,7 @@ public class JwtAuthUtils {
         return !jwtUtil.isBlacklisted(token) && jwtUtil.validateToken(token) && "access".equals(jwtUtil.getType(token));
     }
 
-    public Long getUserId(String token) {
+    public UUID getUserId(String token) {
         return jwtUtil.getUserId(token);
     }
 }

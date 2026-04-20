@@ -5,17 +5,18 @@ import com.team6.backend.global.infrastructure.type.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "p_user")
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "userId")
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "user_id", columnDefinition = "uuid")
+    private UUID id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;

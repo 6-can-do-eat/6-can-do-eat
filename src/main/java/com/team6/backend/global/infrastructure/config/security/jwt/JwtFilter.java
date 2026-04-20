@@ -8,12 +8,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
@@ -31,6 +34,10 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
+
+    private List<GrantedAuthority> getAuthorities(String role) {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+    }
 
     private final JwtAuthUtils jwtAuthUtils;
 
@@ -68,7 +75,9 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // 사용자 정보 꺼내기
-        Long userId = jwtAuthUtils.getUserId(token);
+        UUID userId = jwtAuthUtils.getUserId(token);
+        String role = jwtAuthUtils.getRole(token);
+        List<GrantedAuthority> authorities = getAuthorities(role);
 
         // 인증 객체 생성 (권한 없이)
         UsernamePasswordAuthenticationToken auth =
@@ -77,10 +86,9 @@ public class JwtFilter extends OncePerRequestFilter {
                  * JWT 인증 객체 생성
                  * token에서 userId 추출 후 principal로 사용
                  * credentials는 JWT 기반이라 별도 비밀번호 없음 (null 처리)
-                 * authorities는 현재 권한 검증 단계가 아니라서 empty list로 초기화
-                 * → null로 두면 이후 SecurityContext 처리에서 예외 가능
+                 * authorities는 token에서 추출한 role로 설정 (ROLE_ 접두사 포함)
                  */
-                new UsernamePasswordAuthenticationToken(userId, null, List.of());
+                new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
         // 새 SecurityContext 생성 후 인증 정보 등록 (이전 정보 덮어쓰기 방지)
         var context = SecurityContextHolder.createEmptyContext();
