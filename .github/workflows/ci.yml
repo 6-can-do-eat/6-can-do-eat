@@ -38,7 +38,7 @@ jobs:
       - name: Build-Test
         run: |
           chmod +x ./gradlew
-          ./gradlew clean build
+          ./gradlew clean build -Dspring.profiles.active=test
 
       # 실패시
       - name: Build Fail Comment

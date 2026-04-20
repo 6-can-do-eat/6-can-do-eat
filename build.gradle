@@ -38,6 +38,10 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // ... 기존에 적어주신 testImplementation들 아래에 추가 ...
+    // test시 활용할 가짜 DB
+    testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {
