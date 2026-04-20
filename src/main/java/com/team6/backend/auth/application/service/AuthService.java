@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -87,7 +89,7 @@ public class AuthService {
 
     public LoginResponse refresh(String accessToken, String refreshToken) {
 
-        Long userId = tokenService.validateAndGetUserId(refreshToken);
+        UUID userId = tokenService.validateAndGetUserId(refreshToken);
 
         // 기존 Access Token 블랙리스트 등록
         tokenService.blacklistAccessToken(accessToken, "refresh");

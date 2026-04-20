@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -53,7 +54,7 @@ public class JwtUtil {
         return BLACKLIST_PREFIX + token;
     }
 
-    public String getRefreshTokenKey(Long userId) {
+    public String getRefreshTokenKey(UUID userId) {
         return REFRESH_PREFIX + userId;
     }
 
@@ -62,7 +63,7 @@ public class JwtUtil {
     }
 
 
-    public String createAccessToken(Long userId, String username, String role) {
+    public String createAccessToken(UUID userId, String username, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenExpiration);
 
@@ -77,7 +78,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(UUID userId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshTokenExpiration);
 
@@ -98,8 +99,8 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public Long getUserId(String token) {
-        return Long.parseLong(parseClaims(token).getSubject());
+    public UUID getUserId(String token) {
+        return UUID.fromString(parseClaims(token).getSubject());
     }
 
     public String getUsername(String token) {
