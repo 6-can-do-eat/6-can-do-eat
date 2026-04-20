@@ -1,1 +1,55 @@
-name: test
+name: Build-Test
+
+on:
+  # pull_request 들어올 떄 활성화 (feature -> develop)
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  pull-requests: write
+
+jobs:
+  Build-Test:
+    runs-on: ubuntu-latest
+
+    env:
+      SPRING_PROFILES_ACTIVE: test
+
+
+    steps:
+      # 1. repository 코드 확인
+      - name: Checkout-code
+        uses: actions/checkout@v4
+
+      # 2. java 환경 설정
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Gradle 환경 설정(junit)
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # 4. 빌드 테스트
+      - name: Build-Test
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean build
+
+      # 실패시
+      - name: Build Fail Comment
+        if: failure() && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: `빌드 테스트가 실패했습니다. 자세한 내용은 Github Actions 탭에서 확인해주세요`
+            });
