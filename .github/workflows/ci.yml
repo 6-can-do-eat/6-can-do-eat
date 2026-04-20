@@ -4,7 +4,7 @@ on:
   # pull_request 들어올 떄 활성화 (feature -> develop)
   pull_request:
     branches:
-      - develop
+      - dev
       - main
 
 permissions:
