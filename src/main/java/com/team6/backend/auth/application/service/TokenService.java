@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -19,7 +20,7 @@ public class TokenService {
     private final RedisService redisService;
 
     // Refresh Token Redis 저장 공통 메서드 (login/refresh에서 재사용)
-    public void saveRefreshToken(Long userId, String refreshToken) {
+    public void saveRefreshToken(UUID userId, String refreshToken) {
         redisService.set(
                 jwtUtil.getRefreshTokenKey(userId),
                 refreshToken,
@@ -45,13 +46,13 @@ public class TokenService {
     }
 
     // Refresh Token 검증 + Redis 비교 → userId 반환
-    public Long validateAndGetUserId(String refreshToken) {
+    public UUID validateAndGetUserId(String refreshToken) {
         // Refresh Token 검증
         if (!jwtUtil.validateToken(refreshToken)) {
             throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
         }
 
-        Long userId = jwtUtil.getUserId(refreshToken);
+        UUID userId = jwtUtil.getUserId(refreshToken);
 
         // Redis에 저장된 Refresh Token과 비교
         String stored = redisService.get(jwtUtil.getRefreshTokenKey(userId));
@@ -82,13 +83,13 @@ public class TokenService {
     }
 
     // Refresh Token Redis 삭제
-    public void deleteRefreshToken(Long userId) {
+    public void deleteRefreshToken(UUID userId) {
         redisService.delete(jwtUtil.getRefreshTokenKey(userId));
     }
 
     public void deleteRefreshTokenByToken(String refreshToken) {
         try {
-            Long userId = jwtUtil.getUserId(refreshToken);
+            UUID userId = jwtUtil.getUserId(refreshToken);
             deleteRefreshToken(userId);
         } catch (Exception e) {
             log.warn("[AUTH] logout 중 Refresh Token 삭제 실패 - {}", e.getMessage());
