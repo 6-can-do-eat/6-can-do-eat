@@ -1,7 +1,7 @@
 package com.team6.backend.store.domain.entity;
 
 import com.team6.backend.area.domain.entity.Area;
-import com.team6.backend.auth.domain.entity.User;
+import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.menu.domain.entity.Menu;
 import jakarta.persistence.*;
