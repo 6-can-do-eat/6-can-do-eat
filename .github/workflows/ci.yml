@@ -4,7 +4,7 @@ on:
   # pull_request 들어올 떄 활성화 (feature -> develop)
   pull_request:
     branches:
-      - develop
+      - dev
       - main
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
       - name: Build-Test
         run: |
           chmod +x ./gradlew
-          ./gradlew clean build
+          ./gradlew clean build -Dspring.profiles.active=test
 
       # 실패시
       - name: Build Fail Comment
