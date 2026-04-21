@@ -16,7 +16,7 @@ import java.util.List;
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "category_id")
     private UUID id;
 
