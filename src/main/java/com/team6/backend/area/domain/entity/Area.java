@@ -32,7 +32,7 @@ public class Area {
     @Column(nullable = false)
     private boolean is_active;
 
-    @OneToMany
+    @OneToMany(mappedBy = "area")
     private List<Store> stores;
 
     public Area(String name, String city, String district, boolean is_active) {
