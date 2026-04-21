@@ -23,10 +23,9 @@ public class Store {
     @Column(name = "store_id")
     private UUID id;
 
-    // TODO: User에 1:N 연관관계 추가
-     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-     @JoinColumn(name = "owner_id", nullable = false)
-     private User owner;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
