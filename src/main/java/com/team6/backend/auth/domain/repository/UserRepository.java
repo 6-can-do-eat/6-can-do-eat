@@ -1,6 +1,6 @@
 package com.team6.backend.auth.domain.repository;
 
-import com.team6.backend.auth.domain.entity.User;
+import com.team6.backend.user.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,7 +1,6 @@
-package com.team6.backend.auth.domain.entity;
+package com.team6.backend.user.domain.entity;
 
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
-import com.team6.backend.global.infrastructure.type.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
