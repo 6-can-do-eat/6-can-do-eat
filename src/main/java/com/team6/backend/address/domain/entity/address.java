@@ -27,6 +27,9 @@ public class address extends BaseEntity {
     @Column(name = "address", nullable = false)
     private String address;
 
+    @Column(name = "detail", nullable = false)
+    private String detail;
+
     // 기본 배송지 여부
     @Column(name = "is_default")
     private boolean isDefault;
