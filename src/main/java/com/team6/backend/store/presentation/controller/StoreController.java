@@ -20,42 +20,45 @@ public class StoreController {
     private final StoreService storeService;
 
     /* 가게 생성 */
-    public StoreResponse createStore(@RequestBody StoreRequest request) {
-        return storeService.createStore(request);
+    public ResponseEntity<StoreResponse> createStore(@RequestBody StoreRequest request) {
+        StoreResponse response = storeService.createStore(request);
+        URI uri = URI.create("/api/v1/stores/" + response.getStoreId());
+        return ResponseEntity.created(uri).body(response);
     }
 
     /* 가게 목록 조회 */
-    public Page<StoreResponse> getStores(
+    public ResponseEntity<Page<StoreResponse>> getStores(
             @RequestParam("page") int page,
             @RequestParam("size") int size,
             @RequestParam("sortBy") String sortBy,
             @RequestParam("isAsc") boolean isAsc
     ) {
-        return storeService.getStores(page-1, size, sortBy, isAsc);
+        return ResponseEntity.ok(storeService.getStores(page, size, sortBy, isAsc));
     }
 
     /* 가게 상세 조회 */
     @GetMapping("/{storeId}")
-    public StoreResponse getStoreById(@PathVariable UUID storeId) {
-        return storeService.getStoreById(storeId);
+    public ResponseEntity<StoreResponse> getStoreById(@PathVariable UUID storeId) {
+        return ResponseEntity.ok(storeService.getStoreById(storeId));
     }
 
     /* 가게 정보 수정 */
     @PutMapping("/{storeId}")
-    public StoreResponse updateStore(@PathVariable UUID storeId, @RequestBody StoreRequest request) {
-        return storeService.updateStore(storeId, request);
+    public ResponseEntity<StoreResponse> updateStore(@PathVariable UUID storeId, @RequestBody StoreRequest request) {
+        return ResponseEntity.ok(storeService.updateStore(storeId, request));
     }
 
     /* 가게 삭제 (소프트) */
     @DeleteMapping("/{storeId}")
-    public void deleteStore(@PathVariable UUID storeId) {
+    public ResponseEntity<Void> deleteStore(@PathVariable UUID storeId) {
         storeService.deleteStore(storeId);
+        return ResponseEntity.noContent().build();
     }
 
     /* 가게 숨김 처리 */
     @PatchMapping("/{storeId}/hide")
-    public StoreResponse hideStore(@PathVariable UUID storeId) {
-        return storeService.hideStore(storeId);
+    public ResponseEntity<StoreResponse> hideStore(@PathVariable UUID storeId) {
+        return ResponseEntity.ok(storeService.hideStore(storeId));
     }
 
 }
