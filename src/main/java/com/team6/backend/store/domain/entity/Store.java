@@ -21,9 +21,8 @@ public class Store {
     @Column(name = "store_id")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
 
     @Column(name = "category_id", nullable = false)
     private UUID categoryId;
@@ -46,8 +45,8 @@ public class Store {
     @Column(name = "is_hidden", nullable = false)
     private boolean isHidden;
 
-    public Store(User owner, UUID categoryId, UUID areaId, String name, String address) {
-        this.owner = owner;
+    public Store(UUID ownerId, UUID categoryId, UUID areaId, String name, String address) {
+        this.ownerId = ownerId;
         this.categoryId = categoryId;
         this.areaId = areaId;
         this.name = name;
