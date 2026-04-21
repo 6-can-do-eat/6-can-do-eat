@@ -1,8 +1,6 @@
 package com.team6.backend.store.domain.entity;
 
-import com.team6.backend.area.domain.entity.Area;
 import com.team6.backend.user.domain.entity.User;
-import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.menu.domain.entity.Menu;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -23,49 +21,48 @@ public class Store {
     @Column(name = "store_id")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @Column(name = "owner_id", nullable = false)
+    private UUID ownerId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @Column(name = "category_id", nullable = false)
+    private UUID categoryId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "area_id", nullable = false)
-    private Area area;
+    @Column(name = "area_id", nullable = false)
+    private UUID areaId;
 
     @OneToMany(mappedBy = "store")
     private List<Menu> menus;
 
-    // TODO: Order에 N:1 연관관계 추가
-    // @OneToMany(mappedBy = "store")
-    // private List<Order> orders;
-
-    // TODO: Review에 N:1 연관관계 추가
-    // @OneToMany(mappedBy = "store")
-    // private List<Review> reviews;
-
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String address;
 
     @Column(nullable = false, name = "average_rating")
     private double rating;
 
-    @Column(nullable = false)
-    private boolean is_hidden;
+    @Column(name = "is_hidden", nullable = false)
+    private boolean isHidden;
 
-    public Store(User owner, Category category, Area area, String name, String address, double rating, boolean is_hidden) {
-        this.owner = owner;
-        this.category = category;
-        this.area = area;
+    public Store(UUID ownerId, UUID categoryId, UUID areaId, String name, String address) {
+        this.ownerId = ownerId;
+        this.categoryId = categoryId;
+        this.areaId = areaId;
         this.name = name;
         this.address = address;
-        this.rating = rating;
-        this.is_hidden = is_hidden;
+        this.rating = 0.0;
+        this.isHidden = false;
     }
 
+    public void update(UUID categoryId, UUID areaId, String name, String address) {
+        this.categoryId = categoryId;
+        this.areaId = areaId;
+        this.name = name;
+        this.address = address;
+    }
+
+    public void hideStore() {
+        this.isHidden = !this.isHidden;
+    }
 }
