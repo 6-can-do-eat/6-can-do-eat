@@ -5,6 +5,7 @@ import com.team6.backend.auth.presentation.dto.request.SignupRequest;
 import com.team6.backend.auth.presentation.dto.response.LoginResponse;
 import com.team6.backend.auth.presentation.dto.response.UserResponse;
 import com.team6.backend.auth.application.service.AuthService;
+import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,34 +20,34 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signup(@RequestBody @Valid SignupRequest request) {
+    public ResponseEntity<SuccessResponse<UserResponse>> signup(@RequestBody @Valid SignupRequest request) {
         UserResponse response = authService.signup(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created(response));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<SuccessResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest request) {
         LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(SuccessResponse.ok(response));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponse> refresh(
+    public ResponseEntity<SuccessResponse<LoginResponse>> refresh(
             @RequestHeader("Authorization") String accessHeader,
             @RequestHeader("X-Refresh-Token") String refreshToken) {
         String accessToken = (accessHeader != null && accessHeader.startsWith("Bearer "))
                 ? accessHeader.substring(7)
                 : null;
-        return ResponseEntity.ok(authService.refresh(accessToken, refreshToken));
+        return ResponseEntity.ok(SuccessResponse.ok(authService.refresh(accessToken, refreshToken)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(
+    public ResponseEntity<SuccessResponse<Void>> logout(
             @RequestHeader("Authorization") String accessHeader,
             @RequestHeader("X-Refresh-Token") String refreshToken) {
         String accessToken = accessHeader.substring(7);
         authService.logout(accessToken, refreshToken);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(SuccessResponse.noContent());
     }
 
     @GetMapping("/test")

@@ -1,5 +1,7 @@
 package com.team6.backend.global.infrastructure.config.security.jwt;
 
+import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
+import com.team6.backend.global.infrastructure.exception.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,6 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private final JwtAuthUtils jwtAuthUtils;
+    private final JsonMapper objectMapper;
 
     // refresh는 Access Token 검증 스킵
     @Override
@@ -68,9 +72,10 @@ public class JwtFilter extends OncePerRequestFilter {
         // JwtAuthUtils 참고
         if (!jwtAuthUtils.isValidToken(token)) {
             log.warn("[JWT] 유효하지 않은 토큰 - uri={}", request.getRequestURI());
+            ErrorResponse errorResponse = ErrorResponse.of(CommonErrorCode.UNAUTHORIZED);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"UNAUTHORIZED\"}");
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
             return;
         }
 
