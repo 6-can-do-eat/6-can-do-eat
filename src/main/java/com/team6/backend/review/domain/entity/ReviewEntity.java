@@ -4,11 +4,18 @@ import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.user.domain.entity.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
+@Table(name = "p_review")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReviewEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,7 +30,7 @@ public class ReviewEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Store store;
 
-//    @JoinColumn(name = "order_id", nullable = false, updatable = false)
+//    @JoinColumn(name = "order_id", nullable = false, updatable = false, unique = true)
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    private Order order;
 
