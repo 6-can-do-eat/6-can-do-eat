@@ -16,7 +16,7 @@ import java.util.UUID;
 public class Area {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "area_id")
     private UUID id;
 
