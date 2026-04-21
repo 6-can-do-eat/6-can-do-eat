@@ -1,6 +1,6 @@
 package com.team6.backend.auth.presentation.dto.request;
 
-import com.team6.backend.global.infrastructure.type.Role;
+import com.team6.backend.user.domain.entity.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

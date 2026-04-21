@@ -2,7 +2,7 @@ package com.team6.backend.global.infrastructure.config.security.util;
 
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
-import com.team6.backend.global.infrastructure.type.Role;
+import com.team6.backend.user.domain.entity.Role;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

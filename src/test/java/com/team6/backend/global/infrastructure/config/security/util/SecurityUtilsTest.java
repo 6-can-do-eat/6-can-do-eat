@@ -1,7 +1,7 @@
 package com.team6.backend.global.infrastructure.config.security.util;
 
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.type.Role;
+import com.team6.backend.user.domain.entity.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
