@@ -20,6 +20,7 @@ public class StoreController {
     private final StoreService storeService;
 
     /* 가게 생성 */
+    @PostMapping
     public ResponseEntity<StoreResponse> createStore(@RequestBody StoreRequest request) {
         StoreResponse response = storeService.createStore(request);
         URI uri = URI.create("/api/v1/stores/" + response.getStoreId());
@@ -27,6 +28,7 @@ public class StoreController {
     }
 
     /* 가게 목록 조회 */
+    @GetMapping
     public ResponseEntity<Page<StoreResponse>> getStores(
             @RequestParam("page") int page,
             @RequestParam("size") int size,

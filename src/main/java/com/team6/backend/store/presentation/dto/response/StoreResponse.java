@@ -13,7 +13,7 @@ public class StoreResponse {
     private final UUID areaId;
     private final String name;
     private final String address;
-    private final boolean is_hidden;
+    private final boolean isHidden;
 
     public StoreResponse(Store store) {
         this.storeId = store.getId();
@@ -21,7 +21,7 @@ public class StoreResponse {
         this.areaId = store.getAreaId();
         this.name = store.getName();
         this.address = store.getAddress();
-        this.is_hidden = store.is_hidden();
+        this.isHidden = store.isHidden();
     }
 
 }

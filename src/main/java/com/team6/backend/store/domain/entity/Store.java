@@ -43,8 +43,8 @@ public class Store {
     @Column(nullable = false, name = "average_rating")
     private double rating;
 
-    @Column(nullable = false)
-    private boolean is_hidden;
+    @Column(name = "is_hidden", nullable = false)
+    private boolean isHidden;
 
     public Store(User owner, UUID categoryId, UUID areaId, String name, String address) {
         this.owner = owner;
@@ -53,7 +53,7 @@ public class Store {
         this.name = name;
         this.address = address;
         this.rating = 0.0;
-        this.is_hidden = false;
+        this.isHidden = false;
     }
 
     public void update(UUID categoryId, UUID areaId, String name, String address) {
@@ -64,6 +64,6 @@ public class Store {
     }
 
     public void hideStore() {
-        this.is_hidden = !this.is_hidden;
+        this.isHidden = !this.isHidden;
     }
 }
