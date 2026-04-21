@@ -1,6 +1,6 @@
 package com.team6.backend.auth.presentation.dto.response;
 
-import com.team6.backend.global.infrastructure.type.Role;
+import com.team6.backend.user.domain.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import java.util.UUID;

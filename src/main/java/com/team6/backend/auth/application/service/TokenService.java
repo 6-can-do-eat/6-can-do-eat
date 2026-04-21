@@ -1,7 +1,7 @@
 package com.team6.backend.auth.application.service;
 
 import com.team6.backend.auth.presentation.dto.response.LoginResponse;
-import com.team6.backend.auth.domain.entity.User;
+import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.global.infrastructure.redis.RedisService;
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;

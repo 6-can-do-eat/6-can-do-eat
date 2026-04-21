@@ -1,4 +1,4 @@
-package com.team6.backend.global.infrastructure.type;
+package com.team6.backend.user.domain.entity;
 
 public enum Role {
     MANAGER,
