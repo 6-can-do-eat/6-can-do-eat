@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  
+  # TODO 통합 테스트에서 테스트용 redis 사용시 삭제할 것
+  # Redis 설정 (spring 계층 아래에 한 번만 작성)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# JWT 및 직접 참조형 환경 변수 (최상단 레벨)
+jwt:
+  secret:
+    key: "test_secret_key_for_testing_purposes_only_1234567890"
+
+# @Value("${REDIS_PORT}") 등을 위한 설정
+REDIS_HOST: localhost
+REDIS_PORT: 6379
+JWT_SECRET_KEY: "test_secret_key_for_testing_purposes_only_1234567890"
