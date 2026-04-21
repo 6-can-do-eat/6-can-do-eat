@@ -30,13 +30,16 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", nullable = false)
     private Address address;
+     */
 
     @Column(nullable = false, length = 20)
     private String orderType = "ONLINE";
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
@@ -45,6 +48,7 @@ public class Order extends BaseEntity {
 
     private String requestText;
 
+    /*
     public static Order createOrder(User user, Store store, Address address, String requestText) {
         Order order = new Order();
         order.user = user;
@@ -53,6 +57,7 @@ public class Order extends BaseEntity {
         order.requestText = requestText;
         return order;
     }
+     */
 
     public void updateToTotalPrice(Integer totalPrice) {
         this.totalPrice = totalPrice;

@@ -8,13 +8,12 @@ import com.team6.backend.order.domain.repository.OrderItemRepository;
 import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
-import com.team6.backend.order.presentation.dto.OrderCreateResponse;
+import com.team6.backend.order.presentation.dto.OrderResponse;
 import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +21,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrderService {
+    /*
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
@@ -30,7 +30,7 @@ public class OrderService {
     private final AddressRepository addressRepository;
 
     @Transactional
-    public OrderCreateResponse createOrder(OrderCreateRequest request, UUID userId) {
+    public OrderResponse createOrder(OrderCreateRequest request, UUID userId) {
         User user = userRepository.getReferenceById(userId);
 
         Store store = storeRepository.findById(request.getStoreId())
@@ -58,7 +58,7 @@ public class OrderService {
 
         orderRepository.save(order);
         orderItemRepository.saveAll(orderItems);
-        return OrderCreateResponse.from(order, userId, orderItems);
+        return OrderResponse.from(order, userId, orderItems);
     }
 
     private void validateStoreOrderable(Store store) {
@@ -70,4 +70,5 @@ public class OrderService {
         if (menu.isHidden() || menu.isDeleted())
             throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
+    */
 }

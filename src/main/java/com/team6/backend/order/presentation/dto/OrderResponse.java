@@ -13,17 +13,18 @@ import java.util.UUID;
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class OrderCreateResponse {
+public class OrderResponse {
     private final UUID orderId;
     private final UUID userId;
     private final UUID storeId;
     private final UUID addressId;
     private final Integer totalPrice;
     private final String requestText;
-    private final List<OrderItemCreateResponse> items;
+    private final List<OrderItemResponse> items;
 
-    public static OrderCreateResponse from(Order order, UUID userId, List<OrderItem> orderItems) {
-        return OrderCreateResponse.builder()
+    /*
+    public static OrderResponse from(Order order, UUID userId, List<OrderItem> orderItems) {
+        return OrderResponse.builder()
                 .orderId(order.getId())
                 .userId(userId)
                 .storeId(order.getStore().getId())
@@ -31,8 +32,10 @@ public class OrderCreateResponse {
                 .totalPrice(order.getTotalPrice())
                 .requestText(order.getRequestText())
                 .items(orderItems.stream()
-                        .map(OrderItemCreateResponse::from)
+                        .map(OrderItemResponse::from)
                         .toList())
                 .build();
     }
+     */
+
 }

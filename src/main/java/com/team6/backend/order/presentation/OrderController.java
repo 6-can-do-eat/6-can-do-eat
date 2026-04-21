@@ -2,7 +2,8 @@ package com.team6.backend.order.presentation;
 
 import com.team6.backend.order.application.OrderService;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
-import com.team6.backend.order.presentation.dto.OrderCreateResponse;
+import com.team6.backend.order.presentation.dto.OrderResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,11 +22,12 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    /*
     @PostMapping("/orders")
     @PreAuthorize("hasAnyRole('CUSTOMER')")
-    public ResponseEntity<OrderCreateResponse> createOrder(@RequestBody OrderCreateRequest request,
-                                           @AuthenticationPrincipal UUID userId) {
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody @Valid OrderCreateRequest request,
+                                                     @AuthenticationPrincipal UUID userId) {
         return ResponseEntity.ok().body(orderService.createOrder(request, userId));
     }
-
+     */
 }

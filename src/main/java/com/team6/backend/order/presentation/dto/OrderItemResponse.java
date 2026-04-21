@@ -11,15 +11,16 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class OrderItemCreateResponse {
+public class OrderItemResponse {
     private final UUID orderItemId;
     private final UUID orderId;
     private final UUID menuId;
     private final Integer quantity;
     private final Integer unitPrice;
 
-    public static OrderItemCreateResponse from(OrderItem orderItem) {
-        return OrderItemCreateResponse.builder()
+    /*
+    public static OrderItemResponse from(OrderItem orderItem) {
+        return OrderItemResponse.builder()
                 .orderItemId(orderItem.getId())
                 .orderId(orderItem.getOrder().getId())
                 .menuId(orderItem.getMenu().getId())
@@ -27,4 +28,6 @@ public class OrderItemCreateResponse {
                 .unitPrice(orderItem.getUnitPrice())
                 .build();
     }
+     */
+
 }

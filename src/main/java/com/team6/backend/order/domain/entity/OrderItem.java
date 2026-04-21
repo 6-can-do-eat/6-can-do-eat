@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.awt.*;
 import java.util.UUID;
 
 @Entity
@@ -24,6 +23,7 @@ public class OrderItem extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;
@@ -42,4 +42,5 @@ public class OrderItem extends BaseEntity {
         orderItem.unitPrice = unitPrice;
         return orderItem;
     }
+     */
 }
