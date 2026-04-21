@@ -1,9 +1,15 @@
 package com.team6.backend.store.application.service;
 
+import com.team6.backend.auth.domain.repository.UserRepository;
+import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
+import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
 import com.team6.backend.store.presentation.dto.response.StoreResponse;
+import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,11 +25,16 @@ import java.util.UUID;
 public class StoreService {
 
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @Transactional
     public StoreResponse createStore(StoreRequest request) {
-        // TODO: User(Owner) 정보 가져와야 함
-        Store store = new Store(null, request.getCategoryId(), request.getAreaId(), request.getName(), request.getAddress());
+        UUID userId = securityUtils.getCurrentUserId();
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
+
+        Store store = new Store(owner, request.getCategoryId(), request.getAreaId(), request.getName(), request.getAddress());
         Store saved =  storeRepository.save(store);
         return new StoreResponse(saved);
     }
@@ -67,6 +78,6 @@ public class StoreService {
 
     private Store findStoreById(UUID storeId) {
         return storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 가게가 존재하지 않습니다. storeId =" + storeId));
+                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
     }
 }
