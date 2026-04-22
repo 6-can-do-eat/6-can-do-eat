@@ -38,6 +38,8 @@ public class SecurityConfig {
 
                 // 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
                         .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/signup").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
