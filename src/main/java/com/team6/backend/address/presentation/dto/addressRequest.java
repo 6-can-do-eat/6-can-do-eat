@@ -13,8 +13,7 @@ public class addressRequest {
     @NotBlank(message = "주소(address)는 필수 입력사항입니다")
     private String address;
 
-    @NotNull
-    private UUID userId;
-
+    private String detail;
+    private boolean isDefault;
 
 }

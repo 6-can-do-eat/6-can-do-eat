@@ -1,5 +1,6 @@
 package com.team6.backend.address.domain.entity;
 
+import com.team6.backend.address.presentation.dto.addressRequest;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.user.domain.entity.User;
 import jakarta.persistence.*;
@@ -21,7 +22,7 @@ public class address extends BaseEntity {
     private UUID adId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id",nullable = false)
     private User user;
 
     @Column(name = "address", nullable = false)
@@ -34,12 +35,11 @@ public class address extends BaseEntity {
     @Column(name = "is_default")
     private boolean isDefault;
 
-    public address(User user, String address, boolean isDefault, String detail) {
+    public address(addressRequest request, User user) {
+        this.address = request.getAddress();
+        this.detail = request.getDetail();
+        this.isDefault = request.isDefault();
         this.user = user;
-        this.address = address;
-        this.detail = detail;
-        this.isDefault = isDefault;
     }
-
 
 }

@@ -7,6 +7,7 @@ import com.team6.backend.address.presentation.dto.addressResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
+import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.user.domain.repository.userInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,16 +25,13 @@ public class addressService {
 
     // post 배송지 등록(costomor)
     @Transactional
-    public addressResponse addAddress(addressRequest request) {
-        // 1. security에서 userID 찾기
-        UUID userId = securityUtils.getCurrentUserId();
-        userInfoRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
-
+    public addressResponse addAddress(addressRequest request, User user)  {
+        // 1.  @AuthenticationPrincipal controller에서 넘겨줌.
+        //->// 이미 컨트롤러에서 검증된 User 객체를 받았으므로 findById가 필요 없음!
         // 2. 찾은 후에 배송지 등록 -> address entity 저장
-        // 유저가 입력.
-        address address = new address(userId, request.getAddress());
 
+        address address = addressRepository.save(new address(request, user));
+        return new addressResponse(address);
     }
 
 
