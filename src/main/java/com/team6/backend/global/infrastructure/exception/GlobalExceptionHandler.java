@@ -2,6 +2,7 @@ package com.team6.backend.global.infrastructure.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -51,6 +52,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode, e.getMessage()));
+    }
+
+    /**
+     * 컨트롤러 권한 없음 예외처리
+     * 컨트롤러에서 @PreAuthorize를 사용하는 경우 설정한 권한 외의 사용자가 접근하면
+     * AccessDeniedException이 발생
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e) {
+        ErrorCode errorCode = CommonErrorCode.FORBIDDEN;
+
+        log.error(e.getMessage(), e);
+
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ErrorResponse.of(errorCode));
     }
 
     /* Fallback 예외 처리 */
