@@ -42,12 +42,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<SuccessResponse<Void>> logout(
+    public ResponseEntity<Void> logout(
             @RequestHeader("Authorization") String accessHeader,
             @RequestHeader("X-Refresh-Token") String refreshToken) {
         String accessToken = accessHeader.substring(7);
         authService.logout(accessToken, refreshToken);
-        return ResponseEntity.ok(SuccessResponse.noContent());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/test")
