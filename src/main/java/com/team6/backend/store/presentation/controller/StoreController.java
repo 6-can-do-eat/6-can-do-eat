@@ -61,7 +61,7 @@ public class StoreController {
     @DeleteMapping("/{storeId}")
     public ResponseEntity<SuccessResponse<Void>> deleteStore(@PathVariable UUID storeId) {
         storeService.deleteStore(storeId);
-        return ResponseEntity.ok(SuccessResponse.noContent());
+        return ResponseEntity.noContent().build(); // 삭제 작업은 예외적으로 SuccessResponse 없이 상태 코드 204를 반환하는 것으로 결정되었습니다.
     }
 
     /* 가게 숨김 처리 */
