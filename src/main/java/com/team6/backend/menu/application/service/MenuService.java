@@ -34,7 +34,8 @@ public class MenuService {
     public MenuResponse createMenu(UUID storeId, MenuRequest request) {
         Store store = storeService.findStoreById(storeId);
         UUID userId = securityUtils.getCurrentUserId();
-        isStoreOwner(store, userId);
+        if (!isStoreOwner(store, userId))
+            throw new ApplicationException(MenuErrorCode.MENU_FORBIDDEN);
 
         String description;
         if (request.isAiDescription()) {
