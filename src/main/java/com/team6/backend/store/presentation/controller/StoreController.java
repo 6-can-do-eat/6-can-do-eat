@@ -1,5 +1,6 @@
 package com.team6.backend.store.presentation.controller;
 
+import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
@@ -26,7 +27,8 @@ public class StoreController {
     public ResponseEntity<SuccessResponse<StoreResponse>> createStore(@RequestBody StoreRequest request) {
         StoreResponse response = storeService.createStore(request);
         URI uri = URI.create("/api/v1/stores/" + response.getStoreId());
-        return ResponseEntity.created(uri).body(SuccessResponse.created(response));
+        SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.CREATED, "가게 생성이 완료되었습니다.", response);
+        return ResponseEntity.created(uri).body(successResponse);
     }
 
     /* 가게 목록 조회 */
@@ -38,14 +40,14 @@ public class StoreController {
             @RequestParam("isAsc") boolean isAsc
     ) {
         Page<StoreResponse> stores = storeService.getStores(page, size, sortBy, isAsc);
-        return ResponseEntity.ok(SuccessResponse.created(stores));
+        return ResponseEntity.ok(SuccessResponse.ok(stores));
     }
 
     /* 가게 상세 조회 */
     @GetMapping("/{storeId}")
     public ResponseEntity<SuccessResponse<StoreResponse>> getStoreById(@PathVariable UUID storeId) {
         StoreResponse response = storeService.getStoreById(storeId);
-        return ResponseEntity.ok(SuccessResponse.created(response));
+        return ResponseEntity.ok(SuccessResponse.ok(response));
     }
 
     /* 가게 정보 수정 */
@@ -53,7 +55,8 @@ public class StoreController {
     @PutMapping("/{storeId}")
     public ResponseEntity<SuccessResponse<StoreResponse>> updateStore(@PathVariable UUID storeId, @RequestBody StoreRequest request) {
         StoreResponse response = storeService.updateStore(storeId, request);
-        return ResponseEntity.ok(SuccessResponse.created(response));
+        SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.OK, "가게 정보 수정이 완료되었습니다.", response);
+        return ResponseEntity.ok(successResponse);
     }
 
     /* 가게 삭제 (소프트) */
@@ -69,7 +72,8 @@ public class StoreController {
     @PatchMapping("/{storeId}/hide")
     public ResponseEntity<SuccessResponse<StoreResponse>> hideStore(@PathVariable UUID storeId) {
         StoreResponse response = storeService.hideStore(storeId);
-        return ResponseEntity.ok(SuccessResponse.created(response));
+        SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.OK, "가게 숨김 변경이 완료되었습니다.", response);
+        return ResponseEntity.ok(successResponse);
     }
 
 }
