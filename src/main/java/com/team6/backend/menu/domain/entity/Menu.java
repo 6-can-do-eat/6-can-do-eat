@@ -1,10 +1,12 @@
 package com.team6.backend.menu.domain.entity;
 
+import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -12,7 +14,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_menu")
-public class Menu {
+@SQLRestriction("deleted_at IS NULL") // 삭제된 데이터 필터링
+public class Menu extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -86,7 +86,7 @@ public class MenuService {
     public void deleteMenu(UUID menuId) {
         Menu menu = findMenuById(menuId);
         checkValidAccessForDelete(menu);
-        menuRepository.delete(menu);
+        menu.markDeleted(securityUtils.getCurrentUserId().toString());
     }
 
     private Menu findMenuById(UUID menuId) {
