@@ -34,9 +34,10 @@ public class address extends BaseEntity {
     @Column(name = "is_default")
     private boolean isDefault;
 
-    public address(User user, String address, boolean isDefault) {
+    public address(User user, String address, boolean isDefault, String detail) {
         this.user = user;
         this.address = address;
+        this.detail = detail;
         this.isDefault = isDefault;
     }
 
