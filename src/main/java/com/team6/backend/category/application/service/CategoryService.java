@@ -7,6 +7,8 @@ import com.team6.backend.category.presentation.dto.response.CategoryResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CategoryErrorCode;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
+import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,9 +26,17 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final SecurityUtils securityUtils;
+    private final AuthValidator authValidator;
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
+        authValidator.validateAccess(
+                null,
+                List.of(Role.MASTER, Role.MANAGER),
+                null,
+                CategoryErrorCode.CATEGORY_FORBIDDEN
+        );
+
         // 카테고리 이름이 중복인지 확인
         if (categoryRepository.existsByName(request.getName())) {
             throw new ApplicationException(CategoryErrorCode.DUPLICATE_CATEGORY_NAME);
@@ -60,6 +71,13 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse updateCategory(UUID categoryId, CategoryRequest request) {
+        authValidator.validateAccess(
+                null,
+                List.of(Role.MASTER, Role.MANAGER),
+                null,
+                CategoryErrorCode.CATEGORY_FORBIDDEN
+        );
+
         Category category = findCategoryById(categoryId);
 
         if (!category.getName().equals(request.getName()) && categoryRepository.existsByName(request.getName())) {
@@ -72,6 +90,13 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(UUID categoryId) {
+        authValidator.validateAccess(
+                null,
+                List.of(Role.MASTER),
+                null,
+                CategoryErrorCode.CATEGORY_FORBIDDEN
+        );
+
         Category category = findCategoryById(categoryId);
         category.markDeleted(securityUtils.getCurrentUserId().toString());
     }
