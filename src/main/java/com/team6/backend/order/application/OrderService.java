@@ -15,13 +15,18 @@ import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
+import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -70,8 +75,25 @@ public class OrderService {
         return OrderResponse.from(order, userId, orderItems);
     }
 
+    public Page<OrderResponse> getOrders(UUID userId, Role role, Pageable pageable) {
+        Page<Order> orders = switch (role) {
+            case CUSTOMER -> orderRepository.findAllByUserId(userId, pageable);
+            case OWNER -> orderRepository.findAllByStore_User_Id(userId, pageable);
+            case MANAGER, MASTER -> orderRepository.findAll(pageable);
+            default -> throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        };
+        // Order 하나에 해당하는 List<OrderItem>를 한번에 불러오기 위한 로직
+        List<UUID> orderIds = orders.getContent().stream().map(Order::getId).toList();
+        // N+1 방지를 위해 조회하려는 Order ID를 리스트로 검색해서 해당하는 List<OrderItem>을 한번에 다 가져와서 그룹핑
+        Map<UUID, List<OrderItem>> orderItemsMap = orderItemRepository.findAllByOrder_IdIn(orderIds)
+                .stream().collect(Collectors.groupingBy(item -> item.getOrder().getId()));
 
-
+        return orders.map(order -> OrderResponse.from(
+                order,
+                userId,
+                orderItemsMap.getOrDefault(order.getId(), List.of())
+        ));
+    }
 
 
     private void validateStoreOrderable(Store store) {
@@ -83,5 +105,6 @@ public class OrderService {
         if (menu.isHidden() || menu.isDeleted())
             throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
+
 
 }

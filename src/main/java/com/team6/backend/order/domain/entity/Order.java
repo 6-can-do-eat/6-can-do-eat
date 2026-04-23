@@ -47,6 +47,11 @@ public class Order extends BaseEntity {
 
     private String requestText;
 
+    /*
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
+     */
+
     public static Order createOrder(User user, Store store, Address address, String requestText) {
         Order order = new Order();
         order.user = user;
