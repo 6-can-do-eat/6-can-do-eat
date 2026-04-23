@@ -19,7 +19,7 @@ public class PaymentResponse {
     private final PaymentStatus paymentStatus;
     private final Long amount;
 
-    public static PaymentResponse from(Payment payment, UUID orderId) {
+    public static PaymentResponse from(Payment payment) {
         return new  PaymentResponse(
                 payment.getId(),
                 payment.getOrder().getId(),

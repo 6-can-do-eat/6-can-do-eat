@@ -33,7 +33,4 @@ public class addressService {
         address address = addressRepository.save(new address(request, user));
         return new addressResponse(address);
     }
-
-
-
 }

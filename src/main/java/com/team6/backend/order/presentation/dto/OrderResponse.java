@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-@Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OrderResponse {
     private final UUID orderId;
@@ -22,7 +21,6 @@ public class OrderResponse {
     private final String requestText;
     private final List<OrderItemResponse> items;
 
-    /*
     public static OrderResponse from(Order order, UUID userId, List<OrderItem> orderItems) {
         return OrderResponse.builder()
                 .orderId(order.getId())
@@ -36,6 +34,4 @@ public class OrderResponse {
                         .toList())
                 .build();
     }
-     */
-
 }

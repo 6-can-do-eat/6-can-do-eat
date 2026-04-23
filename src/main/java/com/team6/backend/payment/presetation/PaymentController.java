@@ -1,9 +1,11 @@
 package com.team6.backend.payment.presetation;
 
+import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.payment.application.PaymentService;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
+import com.team6.backend.user.domain.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -18,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
+    private final SecurityUtils securityUtils;
 
     @PostMapping("/{orderId}/payments")
     @PreAuthorize("hasAnyRole('CUSTOMER')")
@@ -25,4 +29,13 @@ public class PaymentController {
                                                                            @RequestBody @Valid PaymentConfirmRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created(paymentService.confirmPayment(orderId, request)));
     }
+
+    @GetMapping("/payments")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
+    public ResponseEntity<SuccessResponse<List<PaymentResponse>>> getPayments() {
+        UUID userId = securityUtils.getCurrentUserId();
+        Role role = securityUtils.getCurrentUserRole();
+        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayments(userId, role)));
+    }
+
 }

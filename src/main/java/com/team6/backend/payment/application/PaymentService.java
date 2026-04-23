@@ -10,9 +10,11 @@ import com.team6.backend.payment.domain.PaymentRepository;
 import com.team6.backend.payment.domain.PaymentStatus;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
+import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,6 +42,23 @@ public class PaymentService {
 
         order.updateOrderStatus(OrderStatus.COMPLETED);
 
-        return PaymentResponse.from(payment, orderId);
+        return PaymentResponse.from(payment);
+    }
+
+    public List<PaymentResponse> getPayments(UUID userId, Role role) {
+        List<PaymentResponse> list = List.of();
+        if (role == Role.CUSTOMER) {
+            list = paymentRepository.findAllByOrder_User_Id(userId)
+                    .stream()
+                    .map(PaymentResponse::from)
+                    .toList();
+        }
+        if (role == Role.MANAGER || role == Role.MASTER) {
+            list = paymentRepository.findAll()
+                    .stream()
+                    .map(PaymentResponse::from)
+                    .toList();
+        }
+        return list;
     }
 }
