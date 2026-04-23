@@ -30,9 +30,6 @@ public class Store {
     @Column(name = "area_id", nullable = false)
     private UUID areaId;
 
-    @OneToMany(mappedBy = "store")
-    private List<Menu> menus;
-
     @Column(nullable = false, length = 100)
     private String name;
 

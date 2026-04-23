@@ -80,7 +80,7 @@ public class StoreService {
         return new StoreResponse(store);
     }
 
-    private Store findStoreById(UUID storeId) {
+    public Store findStoreById(UUID storeId) {
         return storeRepository.findById(storeId)
                 .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
     }
