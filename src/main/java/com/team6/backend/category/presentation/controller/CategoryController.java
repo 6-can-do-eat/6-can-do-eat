@@ -5,6 +5,7 @@ import com.team6.backend.category.presentation.dto.request.CategoryRequest;
 import com.team6.backend.category.presentation.dto.response.CategoryResponse;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class CategoryController {
     /* 카테고리 생성 */
     @PostMapping
     @PreAuthorize("hasAnyRole('MASTER', 'MANAGER')")
-    public ResponseEntity<SuccessResponse<CategoryResponse>> createCategory(@RequestBody CategoryRequest request) {
+    public ResponseEntity<SuccessResponse<CategoryResponse>> createCategory(@RequestBody @Valid CategoryRequest request) {
         CategoryResponse response = categoryService.createCategory(request);
         URI uri = URI.create("/api/v1/categories/" + response.getCategoryId());
         SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.CREATED, "카테고리 생성이 완료되었습니다.", response);
@@ -54,7 +55,7 @@ public class CategoryController {
     /* 카테고리 수정 */
     @PutMapping("/{categoryId}")
     @PreAuthorize("hasAnyRole('MASTER', 'MANAGER')")
-    public ResponseEntity<SuccessResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @RequestBody CategoryRequest request) {
+    public ResponseEntity<SuccessResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @RequestBody @Valid CategoryRequest request) {
         CategoryResponse response = categoryService.updateCategory(categoryId, request);
         SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.OK, "카테고리 수정이 완료되었습니다.", response);
         return ResponseEntity.ok(successResponse);

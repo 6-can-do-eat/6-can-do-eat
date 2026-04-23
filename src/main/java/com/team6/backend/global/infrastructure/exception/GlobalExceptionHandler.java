@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.stream.Collectors;
 
@@ -70,6 +71,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode));
+    }
+
+    /**
+     * 경로 변수나 쿼리 파라미터의 타입이 일치하지 않을 때
+     * MethodArgumentTypeMismatchException이 발생
+     * (예: UUID 자리에 일반 문자열)
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+        log.warn("[TYPE_MISMATCH] field: {}, value: {}", e.getName(), e.getValue());
+
+        String message = String.format("파라미터 '%s'의 형식이 올바르지 않습니다. (입력값: %s)", e.getName(), e.getValue());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ErrorResponse.of(errorCode, message));
     }
 
     /* Fallback 예외 처리 */

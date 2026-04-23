@@ -63,6 +63,12 @@ class CategoryControllerTest {
             return null;
         }).given(jwtFilter).doFilter(any(), any(), any());
 
+        willAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+            return null;
+        }).given(jwtAuthenticationEntryPoint).commence(any(), any(), any());
+
         Category mockCategory = new Category("테스트 카테고리");
         ReflectionTestUtils.setField(mockCategory, "categoryId", categoryId);
         mockResponse = new CategoryResponse(mockCategory);
@@ -187,10 +193,15 @@ class CategoryControllerTest {
     }
 
     @Test
-    @DisplayName("인증 실패: 토큰 없이 접근 시 (401 Unauthorized)")
+    @DisplayName("인증 실패: 토큰 없이 보호된 API 접근 시 (401 Unauthorized)")
     void accessWithoutToken_Fail() throws Exception {
-        // @WithMockUser 없이 수행
-        mockMvc.perform(get("/api/v1/categories/" + UUID.randomUUID()))
+        Map<String, String> request = new HashMap<>();
+        request.put("name", "인증없는 카테고리 시도");
+
+        mockMvc.perform(post("/api/v1/categories")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
 
