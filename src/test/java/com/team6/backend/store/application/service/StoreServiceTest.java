@@ -50,7 +50,7 @@ class StoreServiceTest {
 
     private Store createMockStore(UUID ownerId) {
         Store store = new Store(ownerId, categoryId, areaId, "테스트 가게", "서울시 강남구");
-        ReflectionTestUtils.setField(store, "StoreId", storeId);
+        ReflectionTestUtils.setField(store, "storeId", storeId);
         return store;
     }
 
