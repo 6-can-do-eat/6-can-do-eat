@@ -21,7 +21,7 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // 리뷰 생성
+    // 리뷰 생성 // 엔드포인트 (/"review")로 고칠 예정.
     @PostMapping("/orders/{orderId}/review")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<ReviewResponseDto>> createReview(@PathVariable UUID orderId, @RequestBody @Valid ReviewRequestDto requestDto){
