@@ -2,8 +2,8 @@ package com.team6.backend.store.application.service;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,6 +26,7 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final SecurityUtils securityUtils;
+    private final AuthValidator authValidator;
 
     @Transactional
     public StoreResponse createStore(StoreRequest request) {
@@ -55,7 +57,12 @@ public class StoreService {
     @Transactional
     public StoreResponse updateStore(UUID storeId, StoreRequest request) {
         Store store = findStoreById(storeId);
-        checkValidAccess(store);
+        authValidator.validateAccess(
+                null,
+                List.of(Role.MASTER, Role.MANAGER, Role.OWNER), // 무조건 허용
+                null, // 조건부 허용
+                StoreErrorCode.STORE_FORBIDDEN
+        );
         store.update(request.getCategoryId(), request.getAreaId(), request.getName(), request.getAddress());
         return new StoreResponse(store);
     }
@@ -63,14 +70,24 @@ public class StoreService {
     @Transactional
     public void deleteStore(UUID storeId) {
         Store store = findStoreById(storeId);
-        checkValidAccess(store);
+        authValidator.validateAccess(
+                store.getOwnerId(),
+                List.of(Role.MASTER),
+                List.of(Role.OWNER),
+                StoreErrorCode.STORE_FORBIDDEN
+        );
         store.markDeleted(securityUtils.getCurrentUserId().toString());
     }
 
     @Transactional
     public StoreResponse hideStore(UUID storeId) {
         Store store = findStoreById(storeId);
-        checkValidAccess(store);
+        authValidator.validateAccess(
+                null,
+                List.of(Role.MASTER, Role.MANAGER, Role.OWNER),
+                null,
+                StoreErrorCode.STORE_FORBIDDEN
+        );
         store.hideStore();
         return new StoreResponse(store);
     }
@@ -80,15 +97,4 @@ public class StoreService {
                 .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
     }
 
-    /* 사용자의 Role이 Customer이거나, 자신이 Owner가 아닌 Store에 접근할 때 예외를 발생시킵니다. */
-    private void checkValidAccess(Store store) {
-        Role role = securityUtils.getCurrentUserRole();
-        if (role == Role.CUSTOMER)
-            throw (new ApplicationException(CommonErrorCode.FORBIDDEN));
-
-        UUID userId = securityUtils.getCurrentUserId();
-        if (role == Role.OWNER && !store.getOwnerId().equals(userId)) {
-            throw (new ApplicationException(CommonErrorCode.FORBIDDEN));
-        }
-    }
 }
