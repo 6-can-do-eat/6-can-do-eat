@@ -5,6 +5,7 @@ import com.team6.backend.auth.presentation.dto.request.LoginRequest;
 import com.team6.backend.auth.presentation.dto.request.SignupRequest;
 import com.team6.backend.auth.presentation.dto.response.LoginResponse;
 import com.team6.backend.auth.presentation.dto.response.UserResponse;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -95,7 +96,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("이미 존재하는 아이디입니다.");
     }
 
@@ -109,7 +110,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("이미 존재하는 닉네임입니다.");
     }
 
@@ -122,7 +123,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.signup(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("허용되지 않은 권한입니다.");
     }
 
@@ -159,7 +160,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
     }
 
@@ -175,7 +176,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
     }
 
@@ -233,7 +234,7 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.refresh("accessToken", "refreshToken"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessage("존재하지 않는 유저입니다.");
     }
 }

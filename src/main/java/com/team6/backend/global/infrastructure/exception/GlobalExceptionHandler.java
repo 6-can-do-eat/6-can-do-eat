@@ -2,6 +2,7 @@ package com.team6.backend.global.infrastructure.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,6 +18,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ErrorResponse> handleApplicationException(ApplicationException e) {
         ErrorCode errorCode = e.getErrorCode();
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode));
@@ -31,6 +33,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
         ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+        log.warn(e.getMessage(), e);
 
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -49,6 +52,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegal(IllegalArgumentException e) {
         ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode, e.getMessage()));
@@ -62,7 +66,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e) {
         ErrorCode errorCode = CommonErrorCode.FORBIDDEN;
-
         log.error(e.getMessage(), e);
 
         return ResponseEntity.status(errorCode.getStatus())
@@ -73,10 +76,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
-
         log.error(e.getMessage(), e);
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode));
+    }
+
+    /* JSON 파싱 실패 예외 처리 (잘못된 형식 또는 허용되지 않은 Enum 값) */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+        log.warn(e.getMessage(), e);
+
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ErrorResponse.of(errorCode, "올바르지 않은 요청 형식입니다."));
     }
 }
