@@ -30,9 +30,11 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", nullable = false)
     private Address address;
+    */
 
     @Column(nullable = false, length = 20)
     private String orderType = "ONLINE";

@@ -12,6 +12,8 @@ import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -45,20 +47,17 @@ public class PaymentService {
         return PaymentResponse.from(payment);
     }
 
-    public List<PaymentResponse> getPayments(UUID userId, Role role) {
-        List<PaymentResponse> list = List.of();
+    public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {
+        // 유저 본인 결제 내역 조회
         if (role == Role.CUSTOMER) {
-            list = paymentRepository.findAllByOrder_User_Id(userId)
-                    .stream()
-                    .map(PaymentResponse::from)
-                    .toList();
+            return paymentRepository.findAllByOrder_User_Id(userId, pageable)
+                    .map(PaymentResponse::from);
         }
+        // 전체 결제 내역 조회
         if (role == Role.MANAGER || role == Role.MASTER) {
-            list = paymentRepository.findAll()
-                    .stream()
-                    .map(PaymentResponse::from)
-                    .toList();
+            return paymentRepository.findAll(pageable)
+                    .map(PaymentResponse::from);
         }
-        return list;
+        throw new ApplicationException(CommonErrorCode.FORBIDDEN);
     }
 }
