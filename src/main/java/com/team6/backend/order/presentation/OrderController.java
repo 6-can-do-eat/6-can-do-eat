@@ -1,5 +1,6 @@
 package com.team6.backend.order.presentation;
 
+import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.order.application.OrderService;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
@@ -22,12 +23,13 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    /*
     @PostMapping("/orders")
     @PreAuthorize("hasAnyRole('CUSTOMER')")
-    public ResponseEntity<OrderResponse> createOrder(@RequestBody @Valid OrderCreateRequest request,
-                                                     @AuthenticationPrincipal UUID userId) {
-        return ResponseEntity.ok().body(orderService.createOrder(request, userId));
+    public ResponseEntity<SuccessResponse<OrderResponse>> createOrder(@RequestBody @Valid OrderCreateRequest request,
+                                                                     @AuthenticationPrincipal UUID userId) {
+        return ResponseEntity.ok(SuccessResponse.created(orderService.createOrder(request, userId)));
     }
-     */
+
+
+
 }
