@@ -44,7 +44,7 @@ public class Order extends BaseEntity {
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
     @Column(nullable = false)
-    private Integer totalPrice = 0;
+    private Long totalPrice = 0L;
 
     private String requestText;
 
@@ -59,7 +59,8 @@ public class Order extends BaseEntity {
     }
      */
 
-    public void updateToTotalPrice(Integer totalPrice) {
+    public void updateToTotalPrice(Long totalPrice) {
         this.totalPrice = totalPrice;
     }
+    public void updateOrderStatus(OrderStatus orderStatus) {this.orderStatus = orderStatus;}
 }

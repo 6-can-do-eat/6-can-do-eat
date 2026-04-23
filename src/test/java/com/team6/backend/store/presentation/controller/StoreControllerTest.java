@@ -108,7 +108,7 @@ class StoreControllerTest {
     @DisplayName("가게 목록 조회 - Customer1 성공 (200 OK)")
     @WithMockUser(username = "customer1", roles = "CUSTOMER")
     void getStores_ByCustomer1_ShouldSucceed() throws Exception {
-        given(storeService.getStores(anyInt(), anyInt(), anyString(), anyBoolean()))
+        given(storeService.getStores(any(), any(), any(), anyInt(), anyInt(), anyString(), anyBoolean()))
                 .willReturn(new PageImpl<>(Collections.singletonList(mockResponse)));
 
         mockMvc.perform(get("/api/v1/stores")
@@ -116,7 +116,9 @@ class StoreControllerTest {
                         .param("size", "10")
                         .param("sortBy", "createdAt")
                         .param("isAsc", "false"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("COMMON_200"))
+                .andExpect(jsonPath("$.data.content[0].name").value("테스트 가게"));
     }
 
     @Test
