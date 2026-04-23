@@ -13,5 +13,5 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
     boolean existsByOrder_Id(UUID orderId);
 
     @EntityGraph(attributePaths = {"user", "store", "order"})
-    Page<ReviewEntity> findByStore_IdAndDeletedAtIsNull(UUID storeId, Pageable pageable);
+    Page<ReviewEntity> findByStore_StoreIdAndDeletedAtIsNull(UUID storeId, Pageable pageable);
 }

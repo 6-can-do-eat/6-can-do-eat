@@ -24,7 +24,7 @@ public class ReviewResponseDto {
     public ReviewResponseDto(ReviewEntity review) {
         this.reviewId = review.getId();
         this.userId = review.getUser().getId();
-        this.storeId = review.getStore().getId();
+        this.storeId = review.getStore().getStoreId();
         this.orderId = review.getOrder().getId();
         this.content = review.getContent();
         this.rating = review.getRating();
