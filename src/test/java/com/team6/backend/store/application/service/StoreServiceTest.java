@@ -4,11 +4,11 @@ import com.team6.backend.global.infrastructure.config.security.util.SecurityUtil
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
 import com.team6.backend.store.presentation.dto.response.StoreResponse;
-import com.team6.backend.user.domain.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,9 @@ class StoreServiceTest {
 
     @Mock
     private SecurityUtils securityUtils;
+
+    @Mock
+    private AuthValidator authValidator;
 
     @InjectMocks
     private StoreService storeService;
@@ -102,15 +106,13 @@ class StoreServiceTest {
     }
 
     @Test
-    @DisplayName("가게 정보 수정 성공 - OWNER 본인 가게")
+    @DisplayName("가게 정보 수정 성공 - 권한 통과")
     void updateStore_Success() {
         // given
         Store store = createMockStore(ownerId);
         StoreRequest request = createStoreRequest();
 
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
-        given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
         // when
         StoreResponse response = storeService.updateStore(storeId, request);
@@ -120,12 +122,11 @@ class StoreServiceTest {
     }
 
     @Test
-    @DisplayName("가게 삭제 성공 - OWNER 본인 가게")
+    @DisplayName("가게 삭제 성공 - 권한 통과")
     void deleteStore_Success() {
         // given
         Store store = createMockStore(ownerId);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
         given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
         // when
@@ -152,34 +153,18 @@ class StoreServiceTest {
     }
 
     @Test
-    @DisplayName("가게 수정 실패 - CUSTOMER 권한 접근 불가")
-    void updateStore_Fail_Forbidden_Customer() {
+    @DisplayName("가게 수정 실패 - 접근 권한 없음")
+    void updateStore_Fail_Forbidden() {
         // given
         Store store = createMockStore(ownerId);
         StoreRequest request = createStoreRequest();
 
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
 
         // when & then
-        assertThatThrownBy(() -> storeService.updateStore(storeId, request))
-                .isInstanceOf(ApplicationException.class)
-                .hasMessage(CommonErrorCode.FORBIDDEN.getMessage());
-    }
+        doThrow(new ApplicationException(CommonErrorCode.FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
 
-    @Test
-    @DisplayName("가게 수정 실패 - 다른 OWNER의 가게 접근")
-    void updateStore_Fail_Forbidden_AnotherOwner() {
-        // given
-        Store store = createMockStore(ownerId);
-        StoreRequest request = createStoreRequest();
-        UUID anotherOwnerId = UUID.randomUUID();
-
-        given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
-        given(securityUtils.getCurrentUserId()).willReturn(anotherOwnerId);
-
-        // when & then
         assertThatThrownBy(() -> storeService.updateStore(storeId, request))
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.FORBIDDEN.getMessage());
@@ -191,9 +176,11 @@ class StoreServiceTest {
         // given
         Store store = createMockStore(ownerId);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
 
         // when & then
+        doThrow(new ApplicationException(CommonErrorCode.FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
+
         assertThatThrownBy(() -> storeService.hideStore(storeId))
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.FORBIDDEN.getMessage());
