@@ -15,17 +15,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
 
+    @Transactional
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
@@ -59,5 +62,19 @@ public class PaymentService {
                     .map(PaymentResponse::from);
         }
         throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+    }
+
+    public PaymentResponse getPayment(UUID paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+        return PaymentResponse.from(payment);
+    }
+
+    public void deletePayment(UUID paymentId, UUID userId) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+        payment.markDeleted(userId.toString());
     }
 }

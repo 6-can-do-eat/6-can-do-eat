@@ -27,7 +27,7 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final SecurityUtils securityUtils;
 
-    @PostMapping("/{orderId}/payments")
+    @PostMapping("/orders/{orderId}/payments")
     @PreAuthorize("hasAnyRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<PaymentResponse>> confirmPayment(@PathVariable UUID orderId,
                                                                            @RequestBody @Valid PaymentConfirmRequest request) {
@@ -39,8 +39,22 @@ public class PaymentController {
     public ResponseEntity<SuccessResponse<Page<PaymentResponse>>> getPayments(
             @PageableDefault(size = 10, sort = "createdBy", direction = Sort.Direction.DESC)
             Pageable pageable, Sort sort) {
-        UUID userId = securityUtils.getCurrentUserId();
-        Role role = securityUtils.getCurrentUserRole();
-        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayments(userId, role, pageable)));
+        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayments(
+                securityUtils.getCurrentUserId(),
+                securityUtils.getCurrentUserRole(),
+                pageable)));
+    }
+
+    @GetMapping("/payments/{paymentId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
+    public ResponseEntity<SuccessResponse<PaymentResponse>> getPayment(@PathVariable UUID paymentId) {
+        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayment(paymentId)));
+    }
+
+    @DeleteMapping("/payments/{paymentId}")
+    @PreAuthorize("hasAnyRole('MASTER')")
+    public ResponseEntity<SuccessResponse<?>> deletePayment(@PathVariable UUID paymentId) {
+        paymentService.deletePayment(paymentId, securityUtils.getCurrentUserId());
+        return ResponseEntity.noContent().build();
     }
 }
