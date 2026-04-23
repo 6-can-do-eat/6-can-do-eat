@@ -34,12 +34,15 @@ public class StoreController {
     /* 가게 목록 조회 */
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<StoreResponse>>> getStores(
-            @RequestParam("page") int page,
-            @RequestParam("size") int size,
-            @RequestParam("sortBy") String sortBy,
-            @RequestParam("isAsc") boolean isAsc
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID areaId,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "false") boolean isAsc
     ) {
-        Page<StoreResponse> stores = storeService.getStores(page, size, sortBy, isAsc);
+        Page<StoreResponse> stores = storeService.getStores(keyword, categoryId, areaId, page, size, sortBy, isAsc);
         return ResponseEntity.ok(SuccessResponse.ok(stores));
     }
 

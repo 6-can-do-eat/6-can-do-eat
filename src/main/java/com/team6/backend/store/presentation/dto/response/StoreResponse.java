@@ -16,7 +16,7 @@ public class StoreResponse {
     private final boolean isHidden;
 
     public StoreResponse(Store store) {
-        this.storeId = store.getId();
+        this.storeId = store.getStoreId();
         this.categoryId = store.getCategoryId();
         this.areaId = store.getAreaId();
         this.name = store.getName();
