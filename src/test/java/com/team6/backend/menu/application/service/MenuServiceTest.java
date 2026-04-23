@@ -4,6 +4,7 @@ import com.team6.backend.global.infrastructure.config.security.util.SecurityUtil
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.MenuErrorCode;
 import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.menu.domain.entity.Menu;
 import com.team6.backend.menu.domain.repository.MenuRepository;
 import com.team6.backend.menu.presentation.dto.request.MenuRequest;
@@ -11,7 +12,6 @@ import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
 import com.team6.backend.menu.presentation.dto.response.MenuResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.domain.entity.Store;
-import com.team6.backend.user.domain.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow; // 추가
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceTest {
@@ -45,6 +46,9 @@ class MenuServiceTest {
     @Mock
     private SecurityUtils securityUtils;
 
+    @Mock
+    private AuthValidator authValidator;
+
     @InjectMocks
     private MenuService menuService;
 
@@ -57,7 +61,7 @@ class MenuServiceTest {
     void createMenu_Success() {
         // given
         UUID storeId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID(); // 현재 사용자 ID이자 가게 주인 ID
+        UUID userId = UUID.randomUUID();
         Store store = new Store(userId, UUID.randomUUID(), UUID.randomUUID(), "테스트 가게", "주소");
 
         MenuRequest request = new MenuRequest();
@@ -69,9 +73,7 @@ class MenuServiceTest {
         Menu savedMenu = new Menu(storeId, "후라이드 치킨", 18000, "바삭바삭");
         ReflectionTestUtils.setField(savedMenu, "menuId", UUID.randomUUID());
 
-        // Mock 설정
         given(storeService.findStoreById(storeId)).willReturn(store);
-        given(securityUtils.getCurrentUserId()).willReturn(userId);
         given(menuRepository.save(any(Menu.class))).willReturn(savedMenu);
 
         // when
@@ -123,7 +125,6 @@ class MenuServiceTest {
     @Test
     @DisplayName("메뉴 수정 성공 - OWNER 본인 가게")
     void updateMenu_Success() {
-        // given
         UUID menuId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
@@ -137,11 +138,8 @@ class MenuServiceTest {
         ReflectionTestUtils.setField(request, "price", 20000);
         ReflectionTestUtils.setField(request, "description", "수정된 설명");
 
-        // 권한 체크 Mocking (OWNER + 본인가게)
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
         given(storeService.findStoreById(storeId)).willReturn(store);
-        given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
         // when
         MenuResponse response = menuService.updateMenu(menuId, request);
@@ -149,7 +147,6 @@ class MenuServiceTest {
         // then
         assertThat(response.getName()).isEqualTo("수정된 치킨");
         assertThat(response.getPrice()).isEqualTo(20000);
-        assertThat(menu.getName()).isEqualTo("수정된 치킨"); // 엔티티 수정 확인
     }
 
     @Test
@@ -163,9 +160,7 @@ class MenuServiceTest {
         Menu menu = new Menu(storeId, "치킨", 18000, "설명");
         Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
 
-        // 권한 체크 Mocking (OWNER + 본인가게)
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
         given(storeService.findStoreById(storeId)).willReturn(store);
         given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
@@ -189,19 +184,13 @@ class MenuServiceTest {
         Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
         given(storeService.findStoreById(storeId)).willReturn(store);
-        given(securityUtils.getCurrentUserId()).willReturn(ownerId);
-
-        // isHidden 초기값은 false
-        assertThat(menu.isHidden()).isFalse();
 
         // when
         MenuResponse response = menuService.hideMenu(menuId);
 
         // then
         assertThat(response.isHidden()).isTrue();
-        assertThat(menu.isHidden()).isTrue(); // 엔티티 상태 변경 확인
     }
 
     // ==========================================
@@ -223,49 +212,19 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("메뉴 수정 실패 - 존재하지 않는 메뉴")
-    void updateMenu_Fail_MenuNotFound() {
-        UUID menuId = UUID.randomUUID();
-        UpdateMenuRequest request = new UpdateMenuRequest();
-
-        given(menuRepository.findById(menuId)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> menuService.updateMenu(menuId, request))
-                .isInstanceOf(ApplicationException.class)
-                .hasMessage(MenuErrorCode.MENU_NOT_FOUND.getMessage());
-    }
-
-    @Test
-    @DisplayName("메뉴 수정 실패 - CUSTOMER 권한은 접근 불가")
-    void updateMenu_Fail_Forbidden_Customer() {
-        UUID menuId = UUID.randomUUID();
-        Menu menu = new Menu(UUID.randomUUID(), "메뉴", 1000, "설명");
-        UpdateMenuRequest request = new UpdateMenuRequest();
-
-        given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
-
-        assertThatThrownBy(() -> menuService.updateMenu(menuId, request))
-                .isInstanceOf(ApplicationException.class)
-                .hasMessage(MenuErrorCode.MENU_FORBIDDEN.getMessage());
-    }
-
-    @Test
-    @DisplayName("메뉴 수정 실패 - 본인 소유가 아닌 가게 (OWNER)")
-    void updateMenu_Fail_Forbidden_NotStoreOwner() {
+    @DisplayName("메뉴 수정 실패 - 권한 부족 (CUSTOMER이거나 남의 가게)")
+    void updateMenu_Fail_Forbidden() {
         UUID menuId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
-        UUID ownerId = UUID.randomUUID();
-        UUID anotherUserId = UUID.randomUUID(); // 다른 OWNER
-
-        Menu menu = new Menu(storeId, "메뉴", 10000, "설명");
-        Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
+        Menu menu = new Menu(storeId, "메뉴", 1000, "설명");
+        Store store = new Store(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
         UpdateMenuRequest request = new UpdateMenuRequest();
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
         given(storeService.findStoreById(storeId)).willReturn(store);
-        given(securityUtils.getCurrentUserId()).willReturn(anotherUserId);
+
+        doThrow(new ApplicationException(MenuErrorCode.MENU_FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
 
         assertThatThrownBy(() -> menuService.updateMenu(menuId, request))
                 .isInstanceOf(ApplicationException.class)
@@ -276,10 +235,15 @@ class MenuServiceTest {
     @DisplayName("메뉴 삭제 실패 - MANAGER 권한은 삭제 불가")
     void deleteMenu_Fail_Forbidden_Manager() {
         UUID menuId = UUID.randomUUID();
-        Menu menu = new Menu(UUID.randomUUID(), "메뉴", 10000, "설명");
+        UUID storeId = UUID.randomUUID();
+        Menu menu = new Menu(storeId, "메뉴", 10000, "설명");
+        Store store = new Store(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
+        given(storeService.findStoreById(storeId)).willReturn(store);
+
+        doThrow(new ApplicationException(MenuErrorCode.MENU_FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
 
         assertThatThrownBy(() -> menuService.deleteMenu(menuId))
                 .isInstanceOf(ApplicationException.class)

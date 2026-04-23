@@ -91,7 +91,7 @@ public class ReviewService {
                 isAsc ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()
         );
 
-        Page<ReviewEntity> reviewList = reviewRepository.findByStore_IdAndDeletedAtIsNull(storeId, pageable);
+        Page<ReviewEntity> reviewList = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(storeId, pageable);
 
         return reviewList.map(ReviewResponseDto::new);
     }
