@@ -30,8 +30,20 @@ public class Payment extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus status;
+    private PaymentStatus status = PaymentStatus.PENDING;
 
     @Column(nullable = false)
     private Long amount;
+
+    public static Payment createPayment(Order order, String paymentKey, Long amount) {
+        Payment payment = new Payment();
+        payment.order = order;
+        payment.paymentKey = paymentKey;
+        payment.amount = amount;
+        return payment;
+    }
+
+    public void updatePaymentStatus(PaymentStatus paymentStatus) {
+        this.status = paymentStatus;
+    }
 }
