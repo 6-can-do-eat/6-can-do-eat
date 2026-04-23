@@ -43,12 +43,14 @@ public class AddressService {
         addressRepository.delete(address);
     }
 
+    @Transactional
     public AddressResponse updateAddress(UUID adId, AddressRequest request) {
         Address address = findById(adId);
         address.updateAddress(request);
         return new AddressResponse(address);
     }
 
+    @Transactional
     public AddressResponse UpdateDefault(UUID adId) {
         Address address = findById(adId);
         address.updateDefault();
