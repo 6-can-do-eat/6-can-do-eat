@@ -4,6 +4,8 @@ import com.team6.backend.auth.presentation.dto.request.LoginRequest;
 import com.team6.backend.auth.presentation.dto.request.SignupRequest;
 import com.team6.backend.auth.presentation.dto.response.LoginResponse;
 import com.team6.backend.auth.presentation.dto.response.UserResponse;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.exception.AuthErrorCode;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.auth.domain.repository.UserRepository;
 import com.team6.backend.user.domain.entity.Role;
@@ -27,14 +29,14 @@ public class AuthService {
     // 닉네임 중복 체크 (공통 메서드 - 회원가입/닉네임 변경 시 재사용)
     private void validateNickname(String nickname) {
         if (nickname != null && userRepository.existsByNickname(nickname)) {
-            throw new IllegalArgumentException("이미 존재하는 닉네임입니다.");
+            throw new ApplicationException(AuthErrorCode.DUPLICATE_NICKNAME);
         }
     }
 
     // Role 제한 (공통 메서드 - 권한 변경시 재사용)
     private void validateRole(Role role) {
         if (role != Role.CUSTOMER && role != Role.OWNER) {
-            throw new IllegalArgumentException("허용되지 않은 권한입니다.");
+            throw new ApplicationException(AuthErrorCode.INVALID_ROLE);
         }
     }
 
@@ -43,7 +45,7 @@ public class AuthService {
 
         // 아이디 중복 체크
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+            throw new ApplicationException(AuthErrorCode.DUPLICATE_USERNAME);
         }
 
         // Role 제한 (CUSTOMER 및 OWNER만 허용)
@@ -80,7 +82,7 @@ public class AuthService {
 
         User user = userRepository.findByUsername(request.getUsername())
                 .filter(u -> passwordEncoder.matches(request.getPassword(), u.getPassword()))
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new ApplicationException(AuthErrorCode.INVALID_CREDENTIALS));
 
         return tokenService.issueTokens(user);
     }
@@ -95,7 +97,7 @@ public class AuthService {
 
         // 유저 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new ApplicationException(AuthErrorCode.USER_NOT_FOUND));
 
         // Refresh Token Rotation - 새 Refresh Token 발급 및 Redis 업데이트
         return tokenService.issueTokens(user);

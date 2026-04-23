@@ -1,6 +1,8 @@
 package com.team6.backend.auth.application.service;
 
 import com.team6.backend.auth.presentation.dto.response.LoginResponse;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.exception.TokenErrorCode;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.global.infrastructure.redis.RedisService;
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtUtil;
@@ -49,7 +51,7 @@ public class TokenService {
     public UUID validateAndGetUserId(String refreshToken) {
         // Refresh Token 검증
         if (!jwtUtil.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw new ApplicationException(TokenErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         UUID userId = jwtUtil.getUserId(refreshToken);
@@ -57,7 +59,7 @@ public class TokenService {
         // Redis에 저장된 Refresh Token과 비교
         String stored = redisService.get(jwtUtil.getRefreshTokenKey(userId));
         if (!refreshToken.equals(stored)) {
-            throw new IllegalArgumentException("Refresh Token이 일치하지 않습니다.");
+            throw new ApplicationException(TokenErrorCode.REFRESH_TOKEN_MISMATCH);
         }
 
         return userId;
