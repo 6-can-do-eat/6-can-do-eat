@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -37,6 +38,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public UserResponse signup(SignupRequest request) {
 
         // 아이디 중복 체크
@@ -73,6 +75,7 @@ public class AuthService {
         );
     }
 
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByUsername(request.getUsername())
@@ -82,6 +85,7 @@ public class AuthService {
         return tokenService.issueTokens(user);
     }
 
+    @Transactional
     public LoginResponse refresh(String accessToken, String refreshToken) {
 
         UUID userId = tokenService.validateAndGetUserId(refreshToken);
