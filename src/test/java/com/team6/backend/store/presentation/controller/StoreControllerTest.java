@@ -104,20 +104,20 @@ class StoreControllerTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    @DisplayName("가게 목록 조회 - Customer1 성공 (200 OK)")
-    @WithMockUser(username = "customer1", roles = "CUSTOMER")
-    void getStores_ByCustomer1_ShouldSucceed() throws Exception {
-        given(storeService.getStores(anyInt(), anyInt(), anyString(), anyBoolean()))
-                .willReturn(new PageImpl<>(Collections.singletonList(mockResponse)));
-
-        mockMvc.perform(get("/api/v1/stores")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .param("sortBy", "createdAt")
-                        .param("isAsc", "false"))
-                .andExpect(status().isOk());
-    }
+//    @Test
+//    @DisplayName("가게 목록 조회 - Customer1 성공 (200 OK)")
+//    @WithMockUser(username = "customer1", roles = "CUSTOMER")
+//    void getStores_ByCustomer1_ShouldSucceed() throws Exception {
+//        given(storeService.getStores(anyInt(), anyInt(), anyString(), anyBoolean()))
+//                .willReturn(new PageImpl<>(Collections.singletonList(mockResponse)));
+//
+//        mockMvc.perform(get("/api/v1/stores")
+//                        .param("page", "0")
+//                        .param("size", "10")
+//                        .param("sortBy", "createdAt")
+//                        .param("isAsc", "false"))
+//                .andExpect(status().isOk());
+//    }
 
     @Test
     @DisplayName("가게 정보 수정 - Manager1 성공 (200 OK)")

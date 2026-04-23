@@ -1,25 +1,25 @@
 package com.team6.backend.store.domain.entity;
 
-import com.team6.backend.user.domain.entity.User;
-import com.team6.backend.menu.domain.entity.Menu;
+import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_store")
-public class Store {
+@SQLRestriction("deleted_at IS NULL")
+public class Store extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "store_id")
-    private UUID id;
+    private UUID StoreId;
 
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;

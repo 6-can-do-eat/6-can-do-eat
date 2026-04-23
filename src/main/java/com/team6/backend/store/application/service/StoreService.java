@@ -1,6 +1,5 @@
 package com.team6.backend.store.application.service;
 
-import com.team6.backend.auth.domain.repository.UserRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
@@ -10,7 +9,6 @@ import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
 import com.team6.backend.store.presentation.dto.response.StoreResponse;
 import com.team6.backend.user.domain.entity.Role;
-import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,14 +24,11 @@ import java.util.UUID;
 public class StoreService {
 
     private final StoreRepository storeRepository;
-    private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
 
     @Transactional
     public StoreResponse createStore(StoreRequest request) {
         UUID userId = securityUtils.getCurrentUserId();
-        userRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         Store store = new Store(userId, request.getCategoryId(), request.getAreaId(), request.getName(), request.getAddress());
         Store saved =  storeRepository.save(store);
@@ -41,12 +36,12 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoreResponse> getStores(int page, int size, String sortBy, boolean isAsc) {
+    public Page<StoreResponse> getStores(String keyword, UUID categoryId, UUID areaId, int page, int size, String sortBy, boolean isAsc) {
         Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(direction, sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<Store> storeList = storeRepository.findAll(pageable);
+        Page<Store> storeList = storeRepository.searchStores(keyword, categoryId, areaId, pageable);
 
         return storeList.map(StoreResponse::new);
     }
@@ -69,7 +64,7 @@ public class StoreService {
     public void deleteStore(UUID storeId) {
         Store store = findStoreById(storeId);
         checkValidAccess(store);
-        storeRepository.delete(store);
+        store.markDeleted(securityUtils.getCurrentUserId().toString());
     }
 
     @Transactional
@@ -90,9 +85,10 @@ public class StoreService {
         Role role = securityUtils.getCurrentUserRole();
         if (role == Role.CUSTOMER)
             throw (new ApplicationException(CommonErrorCode.FORBIDDEN));
-        else if (role == Role.OWNER) {
-            if (store.getOwnerId() != securityUtils.getCurrentUserId())
-                throw (new ApplicationException(CommonErrorCode.FORBIDDEN));
+
+        UUID userId = securityUtils.getCurrentUserId();
+        if (role == Role.OWNER && !store.getOwnerId().equals(userId)) {
+            throw (new ApplicationException(CommonErrorCode.FORBIDDEN));
         }
     }
 }
