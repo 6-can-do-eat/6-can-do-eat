@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -33,7 +34,7 @@ public class PaymentService {
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
         // 결제 금액 일치 여부
-        if (request.getAmount() != order.getTotalPrice()) {
+        if (!Objects.equals(request.getAmount(), order.getTotalPrice())) {
             throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         // 중복 paymentKey 체크
