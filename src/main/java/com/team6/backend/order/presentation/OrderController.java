@@ -3,10 +3,7 @@ package com.team6.backend.order.presentation;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.order.application.OrderService;
-import com.team6.backend.order.presentation.dto.OrderCreateRequest;
-import com.team6.backend.order.presentation.dto.OrderResponse;
-import com.team6.backend.order.presentation.dto.OrderStatusUpdate;
-import com.team6.backend.order.presentation.dto.OrderUpdate;
+import com.team6.backend.order.presentation.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -63,6 +60,16 @@ public class OrderController {
     ) {
         return ResponseEntity.ok(
                 SuccessResponse.ok(orderService.updateOrderStatus(orderId, request))
+        );
+    }
+
+    @PatchMapping("/orders/{orderId}/cancel")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
+    public ResponseEntity<SuccessResponse<OrderCancel.Response>> cancelOrder(
+            @PathVariable UUID orderId
+    ) {
+        return ResponseEntity.ok(
+                SuccessResponse.ok(orderService.cancelOrder(orderId))
         );
     }
 
