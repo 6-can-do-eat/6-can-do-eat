@@ -62,4 +62,5 @@ public class Order extends BaseEntity {
     }
     public void updateTotalPrice(Long totalPrice) {this.totalPrice = totalPrice;}
     public void updateOrderStatus(OrderStatus orderStatus) {this.orderStatus = orderStatus;}
+    public void updateRequestText(String requestText) {this.requestText = requestText;}
 }

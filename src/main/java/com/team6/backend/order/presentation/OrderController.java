@@ -5,7 +5,7 @@ import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.order.application.OrderService;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
-import com.team6.backend.user.domain.entity.Role;
+import com.team6.backend.order.presentation.dto.OrderUpdate;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,6 +46,14 @@ public class OrderController {
     public ResponseEntity<SuccessResponse<OrderResponse>> getOrder(@PathVariable UUID orderId) {
         return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrder(orderId)));
     }
+
+    @PutMapping("/orders/{orderId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER')")
+    public ResponseEntity<SuccessResponse<OrderUpdate.Response>> updateOrder(@PathVariable UUID orderId,
+                                                                      @RequestBody @Valid OrderUpdate.Request request) {
+        return ResponseEntity.ok(SuccessResponse.ok(orderService.updateOrder(orderId, request)));
+    }
+
 
 
 

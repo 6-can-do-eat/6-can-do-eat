@@ -14,10 +14,13 @@ import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
+import com.team6.backend.order.presentation.dto.OrderUpdate;
+import com.team6.backend.order.presentation.dto.OrderUpdateRequest;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -112,6 +115,14 @@ public class OrderService {
         return OrderResponse.from(order, order.getUser().getId(), orderItems);
     }
 
+    @Transactional
+    public OrderUpdate.Response updateOrder(UUID orderId, @Valid OrderUpdate.Request request) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+        order.updateRequestText(request.getRequestText());
+        return OrderUpdate.Response.from(orderId, request.getRequestText());
+    }
 
 
 
