@@ -13,5 +13,6 @@ public class AddressRequest {
 
     private String detail;
     private boolean isDefault;
+    private String alias;
 
 }

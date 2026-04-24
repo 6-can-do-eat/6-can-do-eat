@@ -12,6 +12,10 @@ import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.user.domain.repository.userInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AddressService {
 
+    // TODO: 로그인 한 유저랑 현 주소에 잇는 유저랑 같은 지 확인 로직 필요(서비스)
     private final AddressRepository addressRepository;
     private final userInfoRepository userInfoRepository;
     private final SecurityUtils securityUtils;
@@ -36,7 +41,32 @@ public class AddressService {
         return new AddressResponse(address);
     }
 
+    // TODO: 유저를....확인해야 하는지 고민
+    // 검색 필수 조건.
+    @Transactional(readOnly = true)
+    public Page<AddressResponse> getAddress(User user, String alias, int page, int size, String sortByTime, boolean isAsc) {
+        Sort.Direction sortDirection = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(sortDirection, sortByTime);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
+        // 검색 조건에 따라 다르게
+        // 검색은 alias(별칭)
+        Page<Address> addressList;
+        if(alias != null && !alias.isEmpty()){
+            addressList =addressRepository.findByUserIdAndAliasContainingIgnoreCase(user.getId(),alias,pageable);
+        } else {
+            addressList = addressRepository.findByUserId(user.getId(), pageable);
+        }
+        return addressList.map(AddressResponse::new);
+    }
+
+    @Transactional(readOnly = true)
+    public AddressResponse getAddressById(UUID adId) {
+        Address address = findById(adId);
+        return new AddressResponse(address);
+    }
+
+    // TODO: 소프트니?
     @Transactional
     public void deleteAddress(UUID adId) {
         Address address = findById(adId);
@@ -64,4 +94,5 @@ public class AddressService {
         return addressRepository.findById(adId).
                 orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
+
 }
