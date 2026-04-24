@@ -5,6 +5,7 @@ import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.order.application.OrderService;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
+import com.team6.backend.order.presentation.dto.OrderStatusUpdate;
 import com.team6.backend.order.presentation.dto.OrderUpdate;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,17 @@ public class OrderController {
     public ResponseEntity<SuccessResponse<OrderUpdate.Response>> updateOrder(@PathVariable UUID orderId,
                                                                       @RequestBody @Valid OrderUpdate.Request request) {
         return ResponseEntity.ok(SuccessResponse.ok(orderService.updateOrder(orderId, request)));
+    }
+
+    @PatchMapping("/orders/{orderId}/status")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
+    public ResponseEntity<SuccessResponse<OrderStatusUpdate.Response>> updateOrderStatus(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid OrderStatusUpdate.Request request
+    ) {
+        return ResponseEntity.ok(
+                SuccessResponse.ok(orderService.updateOrderStatus(orderId, request))
+        );
     }
 
 

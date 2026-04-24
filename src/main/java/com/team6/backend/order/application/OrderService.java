@@ -15,6 +15,7 @@ import com.team6.backend.order.domain.repository.OrderItemRepository;
 import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.order.presentation.dto.OrderCreateRequest;
 import com.team6.backend.order.presentation.dto.OrderResponse;
+import com.team6.backend.order.presentation.dto.OrderStatusUpdate;
 import com.team6.backend.order.presentation.dto.OrderUpdate;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
@@ -137,6 +138,20 @@ public class OrderService {
             throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
+    @Transactional
+    public OrderStatusUpdate.Response updateOrderStatus(UUID orderId, OrderStatusUpdate.Request request) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+
+        Role role = securityUtils.getCurrentUserRole();
+        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getUser().getId())) {
+            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        }
+        order.updateOrderStatus(request.getOrderStatus());
+
+        return OrderStatusUpdate.Response.from(order.getId(), order.getOrderStatus());
+    }
 
 
 }
