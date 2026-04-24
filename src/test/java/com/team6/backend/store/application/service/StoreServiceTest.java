@@ -1,5 +1,10 @@
 package com.team6.backend.store.application.service;
 
+import com.team6.backend.area.domain.entity.Area;
+import com.team6.backend.area.domain.repository.AreaRepository;
+import com.team6.backend.auth.domain.repository.UserRepository;
+import com.team6.backend.category.domain.entity.Category;
+import com.team6.backend.category.domain.repository.CategoryRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
@@ -9,6 +14,7 @@ import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
 import com.team6.backend.store.presentation.dto.response.StoreResponse;
+import com.team6.backend.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,10 +42,14 @@ class StoreServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
-
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
+    private AreaRepository areaRepository;
     @Mock
     private SecurityUtils securityUtils;
-
     @Mock
     private AuthValidator authValidator;
 
@@ -53,7 +63,16 @@ class StoreServiceTest {
     private final UUID areaId = UUID.randomUUID();
 
     private Store createMockStore(UUID ownerId) {
-        Store store = new Store(ownerId, categoryId, areaId, "테스트 가게", "서울시 강남구");
+        User user = org.mockito.Mockito.mock(User.class);
+        given(user.getId()).willReturn(ownerId);
+
+        Category category = new Category("테스트 카테고리");
+        ReflectionTestUtils.setField(category, "categoryId", categoryId);
+
+        Area area = new Area("테스트 지역", "서울시", "강남구", true);
+        ReflectionTestUtils.setField(area, "areaId", areaId);
+
+        Store store = new Store(user, category, area, "테스트 가게", "서울시 강남구");
         ReflectionTestUtils.setField(store, "storeId", storeId);
         return store;
     }
@@ -79,6 +98,9 @@ class StoreServiceTest {
         Store store = createMockStore(ownerId);
 
         given(securityUtils.getCurrentUserId()).willReturn(ownerId);
+        given(userRepository.findById(ownerId)).willReturn(Optional.of(store.getOwner()));
+        given(categoryRepository.findById(categoryId)).willReturn(Optional.of(store.getCategory()));
+        given(areaRepository.findById(areaId)).willReturn(Optional.of(store.getArea()));
         given(storeRepository.save(any(Store.class))).willReturn(store);
 
         // when
@@ -113,6 +135,8 @@ class StoreServiceTest {
         StoreRequest request = createStoreRequest();
 
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+        given(categoryRepository.findById(categoryId)).willReturn(Optional.of(store.getCategory()));
+        given(areaRepository.findById(areaId)).willReturn(Optional.of(store.getArea()));
 
         // when
         StoreResponse response = storeService.updateStore(storeId, request);

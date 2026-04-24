@@ -1,5 +1,8 @@
 package com.team6.backend.store.presentation.controller;
 
+import com.team6.backend.area.domain.entity.Area;
+import com.team6.backend.category.domain.entity.Category;
+import com.team6.backend.user.domain.entity.User;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import tools.jackson.databind.json.JsonMapper;
 import com.team6.backend.global.infrastructure.config.security.config.SecurityConfig;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -61,15 +65,22 @@ class StoreControllerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // 모킹된 JwtFilter가 FilterChain을 끊지 않고 다음으로 넘기도록 설정
         willAnswer(invocation -> {
             invocation.getArgument(2, FilterChain.class)
                     .doFilter(invocation.getArgument(0), invocation.getArgument(1));
             return null;
         }).given(jwtFilter).doFilter(any(), any(), any());
 
-        // 테스트용 DTO 및 Response 초기화
-        Store mockStore = new Store(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "테스트 가게", "서울시 종로구 광화문로 123");
+        User mockUser = org.mockito.Mockito.mock(User.class);
+        given(mockUser.getId()).willReturn(UUID.randomUUID());
+        Category mockCategory = new Category("테스트 카테고리");
+        ReflectionTestUtils.setField(mockCategory, "categoryId", UUID.randomUUID());
+        Area mockArea = new Area("테스트 지역", "서울시", "강남구", true);
+        ReflectionTestUtils.setField(mockArea, "areaId", UUID.randomUUID());
+
+        Store mockStore = new Store(mockUser, mockCategory, mockArea, "테스트 가게", "서울시 종로구 광화문로 123");
+        ReflectionTestUtils.setField(mockStore, "storeId", storeId);
+
         mockResponse = new StoreResponse(mockStore);
 
         storeRequestMap = new HashMap<>();
@@ -179,7 +190,7 @@ class StoreControllerTest {
     @WithMockUser(username = "owner1", roles = "OWNER")
     void createStore_Fail_Validation_BlankName() throws Exception {
         Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
-        invalidRequest.put("name", "   "); // 공백
+        invalidRequest.put("name", "   ");
 
         mockMvc.perform(post("/api/v1/stores")
                         .with(csrf())
@@ -195,7 +206,7 @@ class StoreControllerTest {
     @WithMockUser(username = "owner1", roles = "OWNER")
     void createStore_Fail_Validation_NullCategoryId() throws Exception {
         Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
-        invalidRequest.remove("categoryId"); // ID 누락
+        invalidRequest.remove("categoryId");
 
         mockMvc.perform(post("/api/v1/stores")
                         .with(csrf())
@@ -211,7 +222,7 @@ class StoreControllerTest {
     @WithMockUser(username = "owner1", roles = "OWNER")
     void createStore_Fail_Validation_BlankAddress() throws Exception {
         Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
-        invalidRequest.put("address", ""); // 공백 주소
+        invalidRequest.put("address", "");
 
         mockMvc.perform(post("/api/v1/stores")
                         .with(csrf())
@@ -227,7 +238,7 @@ class StoreControllerTest {
     @WithMockUser(username = "manager1", roles = "MANAGER")
     void updateStore_Fail_Validation_NullAreaId() throws Exception {
         Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
-        invalidRequest.remove("areaId"); // 지역 ID 누락
+        invalidRequest.remove("areaId");
 
         mockMvc.perform(put("/api/v1/stores/{storeId}", storeId)
                         .with(csrf())
