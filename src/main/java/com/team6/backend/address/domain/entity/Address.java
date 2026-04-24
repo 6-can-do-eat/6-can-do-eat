@@ -27,8 +27,12 @@ public class Address extends BaseEntity {
     @Column(name = "address", nullable = false)
     private String address;
 
-    @Column(name = "detail", nullable = false)
+    @Column(name = "detail")
     private String detail;
+
+    // 검색.....
+    @Column(name = "alias")
+    private String alias;
 
     // 기본 배송지 여부
     @Column(name = "is_default")
@@ -39,12 +43,14 @@ public class Address extends BaseEntity {
         this.detail = request.getDetail();
         this.isDefault = false;
         this.user = user;
+        this.alias = request.getAlias();
     }
 
     public void updateAddress(AddressRequest request) {
         this.address = request.getAddress();
         this.detail = request.getDetail();
         this.isDefault = request.isDefault();
+        this.alias = request.getAlias();
     }
 
     // 어차피 값이 두개 밖에 없으니 dto갖고 오지 말자
