@@ -7,8 +7,6 @@ import com.team6.backend.address.presentation.dto.AddressResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
-import com.team6.backend.global.infrastructure.exception.ErrorCode;
-import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.user.domain.repository.userInfoRepository;
 import lombok.RequiredArgsConstructor;

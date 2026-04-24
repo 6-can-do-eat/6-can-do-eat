@@ -6,7 +6,7 @@ import com.team6.backend.category.presentation.dto.request.CategoryRequest;
 import com.team6.backend.category.presentation.dto.response.CategoryResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CategoryErrorCode;
+import com.team6.backend.category.domain.exception.CategoryErrorCode;
 import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.user.domain.entity.Role;
 import org.junit.jupiter.api.DisplayName;
