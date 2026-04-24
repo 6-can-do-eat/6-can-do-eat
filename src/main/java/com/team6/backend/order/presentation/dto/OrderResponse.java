@@ -4,7 +4,6 @@ import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.entity.OrderItem;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;

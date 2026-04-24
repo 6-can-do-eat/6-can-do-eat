@@ -2,8 +2,6 @@ package com.team6.backend.order.domain.repository;
 
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
-import com.team6.backend.order.presentation.dto.OrderResponse;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
