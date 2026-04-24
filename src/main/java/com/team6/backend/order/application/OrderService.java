@@ -159,5 +159,11 @@ public class OrderService {
         return OrderCancel.Response.from(orderId, order.getOrderStatus());
     }
 
-
+    @Transactional
+    public void deleteOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+        order.markDeleted(securityUtils.getCurrentUserId().toString());
+    }
 }

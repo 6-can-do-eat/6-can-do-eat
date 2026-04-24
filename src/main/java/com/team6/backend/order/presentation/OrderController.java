@@ -73,8 +73,11 @@ public class OrderController {
         );
     }
 
-
-
-
+    @DeleteMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('MASTER')")
+    public ResponseEntity<Void> deleteOrder(@PathVariable UUID orderId) {
+        orderService.deleteOrder(orderId);
+        return ResponseEntity.noContent().build();
+    }
 }
 
