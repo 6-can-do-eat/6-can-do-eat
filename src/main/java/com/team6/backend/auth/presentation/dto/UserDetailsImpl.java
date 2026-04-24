@@ -1,4 +1,4 @@
-package com.team6.backend.user.presentation.dto;
+package com.team6.backend.auth.presentation.dto;
 
 
 import com.team6.backend.user.domain.entity.Role;
