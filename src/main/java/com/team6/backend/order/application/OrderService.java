@@ -3,6 +3,7 @@ package com.team6.backend.order.application;
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.address.domain.repository.AddressRepository;
 import com.team6.backend.auth.domain.repository.UserRepository;
+import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.menu.domain.entity.Menu;
@@ -39,6 +40,7 @@ public class OrderService {
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
     private final AddressRepository addressRepository;
+    private final SecurityUtils securityUtils;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request, UUID userId) {
@@ -75,7 +77,8 @@ public class OrderService {
         return OrderResponse.from(order, userId, orderItems);
     }
 
-    public Page<OrderResponse> getOrders(UUID userId, Role role, Pageable pageable) {
+    public Page<OrderResponse> getOrders(UUID userId, Pageable pageable) {
+        Role role = securityUtils.getCurrentUserRole();
         Page<Order> orders = switch (role) {
             case CUSTOMER -> orderRepository.findAllByUserId(userId, pageable);
             case OWNER -> orderRepository.findAllByStore_User_Id(userId, pageable);
@@ -95,6 +98,22 @@ public class OrderService {
         ));
     }
 
+    public OrderResponse getOrder(UUID orderId) {
+        Role role = securityUtils.getCurrentUserRole();
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        );
+        // 가게에 포함되는 주문 일치 여부 확인
+        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getUser().getId())) {
+            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        }
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        return OrderResponse.from(order, order.getUser().getId(), orderItems);
+    }
+
+
+
 
     private void validateStoreOrderable(Store store) {
         if (store.isHidden() || store.isDeleted())
@@ -105,6 +124,7 @@ public class OrderService {
         if (menu.isHidden() || menu.isDeleted())
             throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
+
 
 
 }

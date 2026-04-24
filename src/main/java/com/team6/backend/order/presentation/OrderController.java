@@ -39,9 +39,15 @@ public class OrderController {
             @AuthenticationPrincipal UUID userId,
             @PageableDefault(size = 10, sort = "createdBy", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        Role role = securityUtils.getCurrentUserRole();
-        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrders(userId, role, pageable)));
+        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrders(userId, pageable)));
+    }
+
+    @GetMapping("/orders/{orderId}")
+    public ResponseEntity<SuccessResponse<OrderResponse>> getOrder(@PathVariable UUID orderId) {
+        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrder(orderId)));
     }
 
 
+
 }
+
