@@ -17,7 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,17 +50,15 @@ public class PaymentService {
     }
 
     public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {
-        // 유저 본인 결제 내역 조회
-        if (role == Role.CUSTOMER) {
-            return paymentRepository.findAllByOrder_User_Id(userId, pageable)
+        return switch (role) {
+            // 유저 본인 결제 내역 조회
+            case CUSTOMER -> paymentRepository.findAllByOrder_User_Id(userId, pageable)
                     .map(PaymentResponse::from);
-        }
-        // 전체 결제 내역 조회
-        if (role == Role.MANAGER || role == Role.MASTER) {
-            return paymentRepository.findAll(pageable)
+            // 전체 결제 내역 조회
+            case MANAGER, MASTER -> paymentRepository.findAll(pageable)
                     .map(PaymentResponse::from);
-        }
-        throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            default -> throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        };
     }
 
     public PaymentResponse getPayment(UUID paymentId) {

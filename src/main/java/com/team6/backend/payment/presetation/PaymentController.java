@@ -5,7 +5,6 @@ import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.payment.application.PaymentService;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
-import com.team6.backend.user.domain.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,7 +36,7 @@ public class PaymentController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
     public ResponseEntity<SuccessResponse<Page<PaymentResponse>>> getPayments(
             @PageableDefault(size = 10, sort = "createdBy", direction = Sort.Direction.DESC)
-            Pageable pageable, Sort sort) {
+            Pageable pageable) {
         return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayments(
                 securityUtils.getCurrentUserId(),
                 securityUtils.getCurrentUserRole(),

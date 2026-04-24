@@ -82,7 +82,7 @@ public class OrderService {
         Role role = securityUtils.getCurrentUserRole();
         Page<Order> orders = switch (role) {
             case CUSTOMER -> orderRepository.findAllByUserId(userId, pageable);
-            case OWNER -> orderRepository.findAllByStore_User_Id(userId, pageable);
+            case OWNER -> orderRepository.findAllByStore_OwnerId(userId, pageable);
             case MANAGER, MASTER -> orderRepository.findAll(pageable);
             default -> throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         };
@@ -123,18 +123,6 @@ public class OrderService {
         return OrderUpdate.Response.from(orderId, request.getRequestText());
     }
 
-
-
-    private void validateStoreOrderable(Store store) {
-        if (store.isHidden() || store.isDeleted())
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
-    }
-
-    private void validateMenuOrderable(Menu menu) {
-        if (menu.isHidden() || menu.isDeleted())
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
-    }
-
     @Transactional
     public OrderStatusUpdate.Response updateOrderStatus(UUID orderId, OrderStatusUpdate.Request request) {
         Order order = orderRepository.findById(orderId).orElseThrow(
@@ -165,5 +153,15 @@ public class OrderService {
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
         order.markDeleted(securityUtils.getCurrentUserId().toString());
+    }
+
+    private void validateStoreOrderable(Store store) {
+        if (store.isHidden() || store.isDeleted())
+            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    private void validateMenuOrderable(Menu menu) {
+        if (menu.isHidden() || menu.isDeleted())
+            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 }
