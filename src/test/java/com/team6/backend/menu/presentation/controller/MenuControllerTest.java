@@ -247,4 +247,56 @@ class MenuControllerTest {
                         .with(csrf()))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("메뉴 생성 실패 - Validation 에러 (가격 누락)")
+    @WithMockUser(username = "owner1", roles = "OWNER")
+    void createMenu_Fail_Validation_NullPrice() throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("name", "테스트 메뉴");
+        // price를 의도적으로 누락
+        request.put("aiDescription", false);
+
+        mockMvc.perform(post("/api/v1/stores/{storeId}/menus", storeId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("가격은 필수입니다.")));
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 - Validation 에러 (이름이 공백)")
+    @WithMockUser(username = "manager1", roles = "MANAGER")
+    void updateMenu_Fail_Validation_BlankName() throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("name", "   "); // 공백 문자열
+        request.put("price", 15000);
+
+        mockMvc.perform(put("/api/v1/menus/{menuId}", menuId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("메뉴 이름은 필수입니다.")));
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 - Validation 에러 (가격 누락)")
+    @WithMockUser(username = "master1", roles = "MASTER")
+    void updateMenu_Fail_Validation_NullPrice() throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("name", "수정된 메뉴");
+        // price 의도적 누락
+
+        mockMvc.perform(put("/api/v1/menus/{menuId}", menuId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("가격은 필수입니다.")));
+    }
 }

@@ -58,9 +58,9 @@ public class StoreService {
     public StoreResponse updateStore(UUID storeId, StoreRequest request) {
         Store store = findStoreById(storeId);
         authValidator.validateAccess(
-                null,
-                List.of(Role.MASTER, Role.MANAGER, Role.OWNER), // 무조건 허용
-                null, // 조건부 허용
+                store.getOwnerId(),
+                List.of(Role.MASTER, Role.MANAGER),
+                List.of(Role.OWNER),
                 StoreErrorCode.STORE_FORBIDDEN
         );
         store.update(request.getCategoryId(), request.getAreaId(), request.getName(), request.getAddress());
@@ -83,9 +83,9 @@ public class StoreService {
     public StoreResponse hideStore(UUID storeId) {
         Store store = findStoreById(storeId);
         authValidator.validateAccess(
-                null,
-                List.of(Role.MASTER, Role.MANAGER, Role.OWNER),
-                null,
+                store.getOwnerId(),
+                List.of(Role.MASTER, Role.MANAGER),
+                List.of(Role.OWNER),
                 StoreErrorCode.STORE_FORBIDDEN
         );
         store.hideStore();
