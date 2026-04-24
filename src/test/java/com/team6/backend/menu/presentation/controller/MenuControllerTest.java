@@ -69,7 +69,6 @@ class MenuControllerTest {
             return null;
         }).given(jwtFilter).doFilter(any(), any(), any());
 
-        // 💡 연관 객체 완벽 주입 (ID 미사용)
         User mockUser = org.mockito.Mockito.mock(User.class);
         given(mockUser.getId()).willReturn(UUID.randomUUID());
         Category mockCategory = new Category("테스트 카테고리");

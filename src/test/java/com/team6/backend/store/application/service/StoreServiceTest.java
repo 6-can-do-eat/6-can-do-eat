@@ -63,8 +63,8 @@ class StoreServiceTest {
     private final UUID areaId = UUID.randomUUID();
 
     private Store createMockStore(UUID ownerId) {
-        User user = org.mockito.Mockito.mock(User.class);
-        given(user.getId()).willReturn(ownerId);
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", ownerId);
 
         Category category = new Category("테스트 카테고리");
         ReflectionTestUtils.setField(category, "categoryId", categoryId);

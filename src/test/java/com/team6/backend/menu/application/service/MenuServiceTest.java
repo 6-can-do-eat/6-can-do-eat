@@ -53,8 +53,8 @@ class MenuServiceTest {
     private MenuService menuService;
 
     private Store createMockStore(UUID storeId, UUID ownerId) {
-        User user = org.mockito.Mockito.mock(User.class);
-        given(user.getId()).willReturn(ownerId);
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", ownerId);
 
         Category category = new Category("테스트 카테고리");
         ReflectionTestUtils.setField(category, "categoryId", UUID.randomUUID());
@@ -85,7 +85,6 @@ class MenuServiceTest {
         ReflectionTestUtils.setField(request, "description", "바삭바삭");
         ReflectionTestUtils.setField(request, "aiDescription", false);
 
-        // UUID 대신 Store 객체 주입!
         Menu savedMenu = new Menu(store, "후라이드 치킨", 18000, "바삭바삭");
         ReflectionTestUtils.setField(savedMenu, "menuId", UUID.randomUUID());
 
