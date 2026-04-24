@@ -57,7 +57,7 @@ public class MenuController {
     /* 메뉴 수정 */
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PutMapping("/menus/{menuId}")
-    public ResponseEntity<SuccessResponse<MenuResponse>> updateMenu(@PathVariable UUID menuId, @RequestBody UpdateMenuRequest request) {
+    public ResponseEntity<SuccessResponse<MenuResponse>> updateMenu(@PathVariable UUID menuId, @RequestBody @Valid UpdateMenuRequest request) {
         MenuResponse response = menuService.updateMenu(menuId, request);
         SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.OK, "메뉴 정보 수정이 완료되었습니다.", response);
         return ResponseEntity.ok(successResponse);

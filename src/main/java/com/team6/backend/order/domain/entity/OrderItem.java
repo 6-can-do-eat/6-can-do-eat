@@ -1,6 +1,7 @@
 package com.team6.backend.order.domain.entity;
 
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
+import com.team6.backend.menu.domain.entity.Menu;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +24,6 @@ public class OrderItem extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;
@@ -42,5 +42,4 @@ public class OrderItem extends BaseEntity {
         orderItem.unitPrice = unitPrice;
         return orderItem;
     }
-     */
 }

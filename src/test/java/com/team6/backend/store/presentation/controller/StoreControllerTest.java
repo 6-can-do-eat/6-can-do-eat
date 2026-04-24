@@ -173,4 +173,68 @@ class StoreControllerTest {
                         .with(csrf()))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("가게 생성 실패 - Validation 에러 (가게 이름 공백)")
+    @WithMockUser(username = "owner1", roles = "OWNER")
+    void createStore_Fail_Validation_BlankName() throws Exception {
+        Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
+        invalidRequest.put("name", "   "); // 공백
+
+        mockMvc.perform(post("/api/v1/stores")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("가게 이름은 필수입니다.")));
+    }
+
+    @Test
+    @DisplayName("가게 생성 실패 - Validation 에러 (카테고리 ID 누락)")
+    @WithMockUser(username = "owner1", roles = "OWNER")
+    void createStore_Fail_Validation_NullCategoryId() throws Exception {
+        Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
+        invalidRequest.remove("categoryId"); // ID 누락
+
+        mockMvc.perform(post("/api/v1/stores")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("카테고리 ID는 필수입니다.")));
+    }
+
+    @Test
+    @DisplayName("가게 생성 실패 - Validation 에러 (주소 공백)")
+    @WithMockUser(username = "owner1", roles = "OWNER")
+    void createStore_Fail_Validation_BlankAddress() throws Exception {
+        Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
+        invalidRequest.put("address", ""); // 공백 주소
+
+        mockMvc.perform(post("/api/v1/stores")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("가게 주소는 필수입니다.")));
+    }
+
+    @Test
+    @DisplayName("가게 수정 실패 - Validation 에러 (지역 ID 누락)")
+    @WithMockUser(username = "manager1", roles = "MANAGER")
+    void updateStore_Fail_Validation_NullAreaId() throws Exception {
+        Map<String, Object> invalidRequest = new HashMap<>(storeRequestMap);
+        invalidRequest.remove("areaId"); // 지역 ID 누락
+
+        mockMvc.perform(put("/api/v1/stores/{storeId}", storeId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("COMMON_400"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("지역 ID는 필수입니다.")));
+    }
 }

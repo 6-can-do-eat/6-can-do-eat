@@ -13,7 +13,7 @@ public class UpdateMenuRequest {
     private String name;
 
     @NotNull(message = "가격은 필수입니다.")
-    private int price;
+    private Integer price;
 
     private String description;
 

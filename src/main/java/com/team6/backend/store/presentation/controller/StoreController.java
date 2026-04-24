@@ -5,6 +5,7 @@ import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.presentation.dto.request.StoreRequest;
 import com.team6.backend.store.presentation.dto.response.StoreResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class StoreController {
     /* 가게 생성 */
     @PostMapping
     @PreAuthorize("hasRole('OWNER')") // Role이 OWNER인 사용자만 호출 가능
-    public ResponseEntity<SuccessResponse<StoreResponse>> createStore(@RequestBody StoreRequest request) {
+    public ResponseEntity<SuccessResponse<StoreResponse>> createStore(@RequestBody @Valid StoreRequest request) {
         StoreResponse response = storeService.createStore(request);
         URI uri = URI.create("/api/v1/stores/" + response.getStoreId());
         SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.CREATED, "가게 생성이 완료되었습니다.", response);
@@ -56,7 +57,7 @@ public class StoreController {
     /* 가게 정보 수정 */
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PutMapping("/{storeId}")
-    public ResponseEntity<SuccessResponse<StoreResponse>> updateStore(@PathVariable UUID storeId, @RequestBody StoreRequest request) {
+    public ResponseEntity<SuccessResponse<StoreResponse>> updateStore(@PathVariable UUID storeId, @RequestBody @Valid StoreRequest request) {
         StoreResponse response = storeService.updateStore(storeId, request);
         SuccessResponse successResponse = SuccessResponse.of(CommonSuccessCode.OK, "가게 정보 수정이 완료되었습니다.", response);
         return ResponseEntity.ok(successResponse);
