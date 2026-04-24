@@ -18,16 +18,13 @@ public class OrderItemResponse {
     private final Integer quantity;
     private final Integer unitPrice;
 
-    /*
     public static OrderItemResponse from(OrderItem orderItem) {
         return OrderItemResponse.builder()
                 .orderItemId(orderItem.getId())
                 .orderId(orderItem.getOrder().getId())
-                .menuId(orderItem.getMenu().getId())
+                .menuId(orderItem.getMenu().getMenuId())
                 .quantity(orderItem.getQuantity())
                 .unitPrice(orderItem.getUnitPrice())
                 .build();
     }
-     */
-
 }
