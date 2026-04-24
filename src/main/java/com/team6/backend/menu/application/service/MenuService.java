@@ -36,7 +36,7 @@ public class MenuService {
     public MenuResponse createMenu(UUID storeId, MenuRequest request) {
         Store store = storeService.findStoreById(storeId);
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 null,
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
@@ -50,7 +50,7 @@ public class MenuService {
             description = request.getDescription();
         }
 
-        Menu menu = new Menu(storeId, request.getName(), request.getPrice(), description);
+        Menu menu = new Menu(store, request.getName(), request.getPrice(), description);
         Menu saved = menuRepository.save(menu);
         return new MenuResponse(saved);
     }
@@ -63,9 +63,9 @@ public class MenuService {
 
         Page<Menu> menuList;
         if (keyword != null && !keyword.isBlank()) {
-            menuList = menuRepository.findByStoreIdAndNameContainingIgnoreCase(storeId, keyword, pageable);
+            menuList = menuRepository.findByStore_StoreIdAndNameContainingIgnoreCase(storeId, keyword, pageable);
         } else {
-            menuList = menuRepository.findByStoreId(storeId, pageable);
+            menuList = menuRepository.findByStore_StoreId(storeId, pageable);
         }
 
         return menuList.map(MenuResponse::new);
@@ -80,9 +80,9 @@ public class MenuService {
     @Transactional
     public MenuResponse updateMenu(UUID menuId, UpdateMenuRequest request) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER, Role.MANAGER),
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
@@ -94,9 +94,9 @@ public class MenuService {
     @Transactional
     public void deleteMenu(UUID menuId) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER), // 무조건 허용
                 List.of(Role.OWNER), // 조건부 허용
                 MenuErrorCode.MENU_FORBIDDEN
@@ -107,9 +107,9 @@ public class MenuService {
     @Transactional
     public MenuResponse hideMenu(UUID menuId) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER, Role.MANAGER),
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
