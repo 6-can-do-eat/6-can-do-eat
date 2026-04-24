@@ -5,7 +5,7 @@ import com.team6.backend.address.presentation.dto.AddressRequest;
 import com.team6.backend.address.presentation.dto.AddressResponse;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
-import com.team6.backend.user.presentation.dto.UserDetailsImpl;
+import com.team6.backend.auth.presentation.dto.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
