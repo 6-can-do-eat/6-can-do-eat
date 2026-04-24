@@ -34,7 +34,7 @@ public class Order extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", nullable = false)
     private Address address;
-     */
+    */
 
     @Column(nullable = false, length = 20)
     private String orderType = "ONLINE";
