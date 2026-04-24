@@ -2,8 +2,8 @@ package com.team6.backend.menu.application.service;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.MenuErrorCode;
-import com.team6.backend.global.infrastructure.exception.StoreErrorCode;
+import com.team6.backend.menu.domain.exception.MenuErrorCode;
+import com.team6.backend.store.domain.exception.StoreErrorCode;
 import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.menu.domain.entity.Menu;
 import com.team6.backend.menu.domain.repository.MenuRepository;

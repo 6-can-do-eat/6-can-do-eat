@@ -1,5 +1,6 @@
-package com.team6.backend.global.infrastructure.exception;
+package com.team6.backend.category.domain.exception;
 
+import com.team6.backend.global.infrastructure.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
