@@ -40,4 +40,18 @@ public class Area extends BaseEntity {
         this.is_active = is_active;
     }
 
+    public void update(String name, String city, String district, Boolean is_active) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (city != null) {
+            this.city = city;
+        }
+        if (district != null) {
+            this.district = district;
+        }
+        if (is_active != null) {
+            this.is_active = is_active;
+        }
+    }
 }
