@@ -2,7 +2,9 @@ package com.team6.backend.order;
 
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.address.domain.repository.AddressRepository;
+import com.team6.backend.area.domain.entity.Area;
 import com.team6.backend.auth.domain.repository.UserRepository;
+import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
@@ -73,8 +75,8 @@ class OrderServiceTest {
         User user = createUser(userId);
         Store store = createStore(storeId, ownerId);
         Address address = createAddress(addressId);
-        Menu chicken = createMenu(storeId, chickenMenuId, "후라이드 치킨", 18000);
-        Menu cola = createMenu(storeId, colaMenuId, "콜라", 2000);
+        Menu chicken = createMenu(store, chickenMenuId, "후라이드 치킨", 18000);
+        Menu cola = createMenu(store, colaMenuId, "콜라", 2000);
 
         OrderCreateRequest request = createOrderCreateRequest(
                 storeId,
@@ -255,7 +257,16 @@ class OrderServiceTest {
     }
 
     private Store createStore(UUID storeId, UUID ownerId) {
-        Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "테스트 가게", "서울");
+        User owner = new User("owner1", "password", Role.OWNER, "사장님");
+        ReflectionTestUtils.setField(owner, "id", ownerId);
+
+        Category category = new Category("테스트 카테고리");
+        ReflectionTestUtils.setField(category, "categoryId", UUID.randomUUID());
+
+        Area area = new Area("테스트 지역", "서울시", "강남구", true);
+        ReflectionTestUtils.setField(area, "areaId", UUID.randomUUID());
+
+        Store store = new Store(owner, category, area, "테스트 가게", "서울");
         ReflectionTestUtils.setField(store, "storeId", storeId);
         return store;
     }
@@ -266,8 +277,8 @@ class OrderServiceTest {
         return address;
     }
 
-    private Menu createMenu(UUID storeId, UUID menuId, String name, int price) {
-        Menu menu = new Menu(storeId, name, price, "설명");
+    private Menu createMenu(Store store, UUID menuId, String name, int price) {
+        Menu menu = new Menu(store, name, price, "설명");
         ReflectionTestUtils.setField(menu, "menuId", menuId);
         return menu;
     }

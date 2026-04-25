@@ -17,8 +17,8 @@ public class StoreResponse {
 
     public StoreResponse(Store store) {
         this.storeId = store.getStoreId();
-        this.categoryId = store.getCategoryId();
-        this.areaId = store.getAreaId();
+        this.categoryId = store.getCategory().getCategoryId();
+        this.areaId = store.getArea().getAreaId();
         this.name = store.getName();
         this.address = store.getAddress();
         this.isHidden = store.isHidden();

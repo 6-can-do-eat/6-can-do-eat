@@ -1,5 +1,7 @@
 package com.team6.backend.menu.application.service;
 
+import com.team6.backend.area.domain.entity.Area;
+import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.menu.domain.exception.MenuErrorCode;
@@ -12,6 +14,7 @@ import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
 import com.team6.backend.menu.presentation.dto.response.MenuResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,25 +35,37 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow; // 추가
+import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceTest {
 
     @Mock
     private MenuRepository menuRepository;
-
     @Mock
     private StoreService storeService;
-
     @Mock
     private SecurityUtils securityUtils;
-
     @Mock
     private AuthValidator authValidator;
 
     @InjectMocks
     private MenuService menuService;
+
+    private Store createMockStore(UUID storeId, UUID ownerId) {
+        User user = new User();
+        ReflectionTestUtils.setField(user, "id", ownerId);
+
+        Category category = new Category("테스트 카테고리");
+        ReflectionTestUtils.setField(category, "categoryId", UUID.randomUUID());
+
+        Area area = new Area("테스트 지역", "서울시", "강남구", true);
+        ReflectionTestUtils.setField(area, "areaId", UUID.randomUUID());
+
+        Store store = new Store(user, category, area, "테스트 가게", "주소");
+        ReflectionTestUtils.setField(store, "storeId", storeId);
+        return store;
+    }
 
     // ==========================================
     // 성공 케이스
@@ -61,8 +76,8 @@ class MenuServiceTest {
     void createMenu_Success() {
         // given
         UUID storeId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        Store store = new Store(userId, UUID.randomUUID(), UUID.randomUUID(), "테스트 가게", "주소");
+        UUID ownerId = UUID.randomUUID();
+        Store store = createMockStore(storeId, ownerId);
 
         MenuRequest request = new MenuRequest();
         ReflectionTestUtils.setField(request, "name", "후라이드 치킨");
@@ -70,7 +85,7 @@ class MenuServiceTest {
         ReflectionTestUtils.setField(request, "description", "바삭바삭");
         ReflectionTestUtils.setField(request, "aiDescription", false);
 
-        Menu savedMenu = new Menu(storeId, "후라이드 치킨", 18000, "바삭바삭");
+        Menu savedMenu = new Menu(store, "후라이드 치킨", 18000, "바삭바삭");
         ReflectionTestUtils.setField(savedMenu, "menuId", UUID.randomUUID());
 
         given(storeService.findStoreById(storeId)).willReturn(store);
@@ -90,11 +105,12 @@ class MenuServiceTest {
     void getMenus_Success_NoKeyword() {
         // given
         UUID storeId = UUID.randomUUID();
-        Menu menu = new Menu(storeId, "치킨", 18000, "설명");
+        Store store = createMockStore(storeId, UUID.randomUUID());
+        Menu menu = new Menu(store, "치킨", 18000, "설명");
         ReflectionTestUtils.setField(menu, "menuId", UUID.randomUUID());
         Page<Menu> menuPage = new PageImpl<>(Collections.singletonList(menu));
 
-        given(menuRepository.findByStoreId(eq(storeId), any(Pageable.class))).willReturn(menuPage);
+        given(menuRepository.findByStore_StoreId(eq(storeId), any(Pageable.class))).willReturn(menuPage);
 
         // when
         Page<MenuResponse> responses = menuService.getMenus(storeId, null, 0, 10, "createdAt", false);
@@ -109,7 +125,8 @@ class MenuServiceTest {
     void getMenuById_Success() {
         // given
         UUID menuId = UUID.randomUUID();
-        Menu menu = new Menu(UUID.randomUUID(), "치킨", 18000, "설명");
+        Store store = createMockStore(UUID.randomUUID(), UUID.randomUUID());
+        Menu menu = new Menu(store, "치킨", 18000, "설명");
         ReflectionTestUtils.setField(menu, "menuId", menuId);
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
@@ -129,9 +146,9 @@ class MenuServiceTest {
         UUID storeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        Menu menu = new Menu(storeId, "기존 치킨", 18000, "기존 설명");
+        Store store = createMockStore(storeId, ownerId);
+        Menu menu = new Menu(store, "기존 치킨", 18000, "기존 설명");
         ReflectionTestUtils.setField(menu, "menuId", menuId);
-        Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
 
         UpdateMenuRequest request = new UpdateMenuRequest();
         ReflectionTestUtils.setField(request, "name", "수정된 치킨");
@@ -139,7 +156,6 @@ class MenuServiceTest {
         ReflectionTestUtils.setField(request, "description", "수정된 설명");
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(storeService.findStoreById(storeId)).willReturn(store);
 
         // when
         MenuResponse response = menuService.updateMenu(menuId, request);
@@ -154,14 +170,12 @@ class MenuServiceTest {
     void deleteMenu_Success() {
         // given
         UUID menuId = UUID.randomUUID();
-        UUID storeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        Menu menu = new Menu(storeId, "치킨", 18000, "설명");
-        Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
+        Store store = createMockStore(UUID.randomUUID(), ownerId);
+        Menu menu = new Menu(store, "치킨", 18000, "설명");
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(storeService.findStoreById(storeId)).willReturn(store);
         given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
         // when
@@ -177,14 +191,10 @@ class MenuServiceTest {
     void hideMenu_Success() {
         // given
         UUID menuId = UUID.randomUUID();
-        UUID storeId = UUID.randomUUID();
-        UUID ownerId = UUID.randomUUID();
-
-        Menu menu = new Menu(storeId, "치킨", 18000, "설명");
-        Store store = new Store(ownerId, UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
+        Store store = createMockStore(UUID.randomUUID(), UUID.randomUUID());
+        Menu menu = new Menu(store, "치킨", 18000, "설명");
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(storeService.findStoreById(storeId)).willReturn(store);
 
         // when
         MenuResponse response = menuService.hideMenu(menuId);
@@ -215,13 +225,11 @@ class MenuServiceTest {
     @DisplayName("메뉴 수정 실패 - 권한 부족 (CUSTOMER이거나 남의 가게)")
     void updateMenu_Fail_Forbidden() {
         UUID menuId = UUID.randomUUID();
-        UUID storeId = UUID.randomUUID();
-        Menu menu = new Menu(storeId, "메뉴", 1000, "설명");
-        Store store = new Store(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
+        Store store = createMockStore(UUID.randomUUID(), UUID.randomUUID());
+        Menu menu = new Menu(store, "메뉴", 1000, "설명");
         UpdateMenuRequest request = new UpdateMenuRequest();
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(storeService.findStoreById(storeId)).willReturn(store);
 
         doThrow(new ApplicationException(MenuErrorCode.MENU_FORBIDDEN))
                 .when(authValidator).validateAccess(any(), any(), any(), any());
@@ -235,12 +243,11 @@ class MenuServiceTest {
     @DisplayName("메뉴 삭제 실패 - MANAGER 권한은 삭제 불가")
     void deleteMenu_Fail_Forbidden_Manager() {
         UUID menuId = UUID.randomUUID();
-        UUID storeId = UUID.randomUUID();
-        Menu menu = new Menu(storeId, "메뉴", 10000, "설명");
-        Store store = new Store(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "가게", "주소");
+        Store store = createMockStore(UUID.randomUUID(), UUID.randomUUID());
+        Menu menu = new Menu(store, "메뉴", 10000, "설명");
+        ReflectionTestUtils.setField(menu, "menuId", menuId);
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-        given(storeService.findStoreById(storeId)).willReturn(store);
 
         doThrow(new ApplicationException(MenuErrorCode.MENU_FORBIDDEN))
                 .when(authValidator).validateAccess(any(), any(), any(), any());

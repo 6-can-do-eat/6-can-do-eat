@@ -130,7 +130,7 @@ public class OrderService {
         );
 
         Role role = securityUtils.getCurrentUserRole();
-        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getStore().getOwnerId())) {
+        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getStore().getOwner().getId())) {
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
         order.updateOrderStatus(request.getOrderStatus());

@@ -12,12 +12,12 @@ public class MenuResponse {
     private final UUID storeId;
     private final String name;
     private final int price;
-    private final String  description;
+    private final String description;
     private final boolean isHidden;
 
     public MenuResponse(Menu menu) {
         this.menuId = menu.getMenuId();
-        this.storeId = menu.getStoreId();
+        this.storeId = menu.getStore().getStoreId();
         this.name = menu.getName();
         this.price = menu.getPrice();
         this.description = menu.getDescription();
