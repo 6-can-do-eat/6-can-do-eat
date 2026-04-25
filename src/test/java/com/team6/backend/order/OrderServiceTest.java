@@ -158,7 +158,7 @@ class OrderServiceTest {
 
         OrderUpdate.Request request = createUpdateRequest("덜 맵게 해주세요");
 
-        given(orderRepository.findByIdAndOrderStatus(orderId, OrderStatus.PENDING))
+        given(orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING))
                 .willReturn(Optional.of(order));
 
         // when
@@ -196,7 +196,7 @@ class OrderServiceTest {
         // then
         assertThat(response.getOrderId()).isEqualTo(orderId);
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
 
     @Test
@@ -247,7 +247,7 @@ class OrderServiceTest {
         // then
         assertThat(response.getOrderId()).isEqualTo(orderId);
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     private User createUser(UUID userId) {

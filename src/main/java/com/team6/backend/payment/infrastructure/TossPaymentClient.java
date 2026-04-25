@@ -6,6 +6,7 @@ import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmResponse;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
+import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -44,7 +45,7 @@ public class TossPaymentClient {
         }
     }
 
-    public TossPaymentConfirmResponse confirmPayment(TossPaymentConfirmRequest request) {
+    public TossPaymentConfirmResponse confirmPayment(PaymentConfirmRequest request) {
         try {
             return restClient.post()
                     .uri("/v1/payments/confirm")

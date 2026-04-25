@@ -116,7 +116,7 @@ public class OrderService {
     @Transactional
     public OrderUpdate.Response updateOrder(UUID orderId, @Valid OrderUpdate.Request request) {
         // Order 상태 PENDING 여부 확인
-        Order order = orderRepository.findByIdAndOrderStatus(orderId, OrderStatus.PENDING).orElseThrow(
+        Order order = orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING).orElseThrow(
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
         order.updateRequestText(request.getRequestText());
@@ -135,7 +135,7 @@ public class OrderService {
         }
         order.updateOrderStatus(request.getOrderStatus());
 
-        return OrderStatusUpdate.Response.from(order.getId(), order.getOrderStatus());
+        return OrderStatusUpdate.Response.from(order.getId(), order.getStatus());
     }
 
     @Transactional
@@ -144,7 +144,7 @@ public class OrderService {
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
         order.updateOrderStatus(OrderStatus.CANCELLED);
-        return OrderCancel.Response.from(orderId, order.getOrderStatus());
+        return OrderCancel.Response.from(orderId, order.getStatus());
     }
 
     @Transactional

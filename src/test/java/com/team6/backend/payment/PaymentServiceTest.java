@@ -62,7 +62,7 @@ class PaymentServiceTest {
         assertThat(response.getPaymentKey()).isEqualTo("payment-key-1");
         assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(response.getAmount()).isEqualTo(15000L);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
         verify(paymentRepository).save(any(Payment.class));
     }
@@ -82,7 +82,7 @@ class PaymentServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.INVALID_INPUT_VALUE.getMessage());
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         verify(paymentRepository, never()).save(any(Payment.class));
     }
 
@@ -102,7 +102,7 @@ class PaymentServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.CONFLICT.getMessage());
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         verify(paymentRepository, never()).save(any(Payment.class));
     }
 
