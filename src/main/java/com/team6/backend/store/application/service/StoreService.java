@@ -8,6 +8,7 @@ import com.team6.backend.category.domain.repository.CategoryRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.AuthErrorCode;
+import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.store.domain.exception.StoreErrorCode;
 import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.store.domain.entity.Store;
@@ -40,6 +41,13 @@ public class StoreService {
 
     @Transactional
     public StoreResponse createStore(StoreRequest request) {
+        authValidator.validateAccess(
+                null,
+                List.of(Role.OWNER),
+                null,
+                CommonErrorCode.FORBIDDEN
+        );
+
         UUID userId = securityUtils.getCurrentUserId();
 
         User owner = userRepository.findById(userId)
@@ -61,6 +69,26 @@ public class StoreService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<Store> storeList = storeRepository.searchStores(keyword, categoryId, areaId, pageable);
+
+        return storeList.map(StoreResponse::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<StoreResponse> getStoresForOwner(String keyword, UUID categoryId, UUID areaId, int page, int size, String sortBy, boolean isAsc) {
+        authValidator.validateAccess(
+                null,
+                List.of(Role.OWNER),
+                null,
+                CommonErrorCode.FORBIDDEN
+        );
+
+        UUID ownerId = securityUtils.getCurrentUserId();
+
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Store> storeList = storeRepository.searchStoresByOwnerId(ownerId, keyword, categoryId, areaId, pageable);
 
         return storeList.map(StoreResponse::new);
     }

@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_menu")
-@SQLRestriction("deleted_at IS NULL") // 삭제된 데이터 필터링
+@SQLRestriction("deleted_at IS NULL")
 public class Menu extends BaseEntity {
 
     @Id

@@ -32,8 +32,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 
@@ -110,7 +109,7 @@ class MenuServiceTest {
         ReflectionTestUtils.setField(menu, "menuId", UUID.randomUUID());
         Page<Menu> menuPage = new PageImpl<>(Collections.singletonList(menu));
 
-        given(menuRepository.findByStore_StoreId(eq(storeId), any(Pageable.class))).willReturn(menuPage);
+        given(menuRepository.searchMenus(eq(storeId), anyString(), any(Pageable.class))).willReturn(menuPage);
 
         // when
         Page<MenuResponse> responses = menuService.getMenus(storeId, null, 0, 10, "createdAt", false);

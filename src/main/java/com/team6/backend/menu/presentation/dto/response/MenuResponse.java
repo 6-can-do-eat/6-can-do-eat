@@ -10,6 +10,7 @@ public class MenuResponse {
 
     private final UUID menuId;
     private final UUID storeId;
+    private final String storeName;
     private final String name;
     private final int price;
     private final String description;
@@ -18,6 +19,7 @@ public class MenuResponse {
     public MenuResponse(Menu menu) {
         this.menuId = menu.getMenuId();
         this.storeId = menu.getStore().getStoreId();
+        this.storeName = menu.getStore().getName();
         this.name = menu.getName();
         this.price = menu.getPrice();
         this.description = menu.getDescription();
