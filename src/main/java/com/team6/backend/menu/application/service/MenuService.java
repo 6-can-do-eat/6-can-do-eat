@@ -11,6 +11,7 @@ import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
 import com.team6.backend.menu.presentation.dto.response.MenuResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.store.domain.exception.StoreErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -57,6 +58,26 @@ public class MenuService {
 
     @Transactional(readOnly = true)
     public Page<MenuResponse> getMenus(UUID storeId, String keyword, int page, int size, String sortBy, boolean isAsc) {
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        String safeKeyword = (keyword != null && !keyword.isBlank()) ? keyword : "";
+        Page<Menu> menuList = menuRepository.searchMenus(storeId, safeKeyword, pageable);
+
+        return menuList.map(MenuResponse::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MenuResponse> getMenusForOwner(UUID storeId, String keyword, int page, int size, String sortBy, boolean isAsc) {
+        Store store = storeService.findStoreById(storeId);
+        authValidator.validateAccess(
+                store.getOwner().getId(),
+                null,
+                List.of(Role.OWNER),
+                StoreErrorCode.STORE_FORBIDDEN
+        );
+
         Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(direction, sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);

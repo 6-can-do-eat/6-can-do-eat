@@ -47,6 +47,20 @@ public class MenuController {
         return ResponseEntity.ok(SuccessResponse.ok(menus));
     }
 
+    /* 메뉴 목록 조회 (본인 가게 메뉴 조회) */
+    @GetMapping("/stores/{storeId}/menus/my")
+    public ResponseEntity<SuccessResponse<Page<MenuResponse>>> getMenusForOwner(
+            @PathVariable UUID storeId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "false") boolean isAsc
+    ) {
+        Page<MenuResponse> menus = menuService.getMenusForOwner(storeId, keyword, page, size, sortBy, isAsc);
+        return ResponseEntity.ok(SuccessResponse.ok(menus));
+    }
+
     /* 메뉴 상세 조회 */
     @GetMapping("/menus/{menuId}")
     public ResponseEntity<SuccessResponse<MenuResponse>> getMenuById(@PathVariable UUID menuId) {
