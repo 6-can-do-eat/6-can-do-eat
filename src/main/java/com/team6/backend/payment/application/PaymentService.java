@@ -9,7 +9,6 @@ import com.team6.backend.payment.domain.Payment;
 import com.team6.backend.payment.domain.PaymentRepository;
 import com.team6.backend.payment.domain.PaymentStatus;
 import com.team6.backend.payment.infrastructure.TossPaymentClient;
-import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmResponse;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
@@ -73,10 +72,13 @@ public class PaymentService {
         };
     }
 
-    public PaymentResponse getPayment(UUID paymentId) {
+    public PaymentResponse getPayment(UUID paymentId, UUID userId, Role role) {
         Payment payment = paymentRepository.findById(paymentId).orElseThrow(
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
+        if (role == Role.CUSTOMER && !userId.equals(payment.getOrder().getUser().getId())) {
+            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        }
         return PaymentResponse.from(payment);
     }
 

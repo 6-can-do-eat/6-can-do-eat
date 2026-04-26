@@ -88,7 +88,7 @@ class OrderServiceTest {
 
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(address));
+        given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
         given(menuRepository.findById(chickenMenuId)).willReturn(Optional.of(chicken));
         given(menuRepository.findById(colaMenuId)).willReturn(Optional.of(cola));
 
@@ -130,7 +130,7 @@ class OrderServiceTest {
 
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(address));
+        given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
         given(menuRepository.findById(menuId)).willReturn(Optional.empty());
 
         // when & then
@@ -188,10 +188,9 @@ class OrderServiceTest {
         OrderStatusUpdate.Request request = createStatusUpdateRequest(OrderStatus.APPROVED);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
 
         // when
-        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, request);
+        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, userId, Role.MANAGER, request);
 
         // then
         assertThat(response.getOrderId()).isEqualTo(orderId);
@@ -216,10 +215,8 @@ class OrderServiceTest {
         OrderStatusUpdate.Request request = createStatusUpdateRequest(OrderStatus.APPROVED);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
-        given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
-        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, request);
+        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, ownerId, Role.OWNER, request);
 
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
     }
