@@ -1,5 +1,6 @@
 package com.team6.backend.address.domain.entity;
 
+import aQute.bnd.annotation.metatype.Meta;
 import com.team6.backend.address.presentation.dto.AddressRequest;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.user.domain.entity.User;
