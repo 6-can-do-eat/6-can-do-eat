@@ -146,10 +146,10 @@ public class ReviewService {
             throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
 
+        review.delete(String.valueOf(userId));
+
         reviewRepository.flush();
         updateStoreAverageRating(review.getStore());
-
-        review.delete(String.valueOf(userId));
     }
 
     private void updateStoreAverageRating(Store store) {
