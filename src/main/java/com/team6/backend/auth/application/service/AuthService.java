@@ -58,12 +58,12 @@ public class AuthService {
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         // User 생성
-        User user = User.builder()
-                .username(request.getUsername())
-                .password(encodedPassword)
-                .role(request.getRole())
-                .nickname(request.getNickname())
-                .build();
+        User user = new User(
+                request.getUsername(),
+                encodedPassword,
+                request.getRole(),
+                request.getNickname()
+        );
 
         // 저장
         User savedUser = userRepository.save(user);

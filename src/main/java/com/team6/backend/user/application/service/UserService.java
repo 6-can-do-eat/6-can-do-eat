@@ -57,9 +57,13 @@ public class UserService {
      */
     @Transactional
     public UserInfoResponse updateUser(String username, UserInfoRequest request, User currentUser) {
+        // 1. 권한 체크 (본인 또는 MASTER)
         validateOwnership(username, currentUser);
+
+        // 2. 대상 조회
         User targetUser = getUserByUsername(username);
 
+        // 3. 수정
         targetUser.updateUsername(request.getUsername());
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             targetUser.updatePassword(passwordEncoder.encode(request.getPassword()));
@@ -70,41 +74,36 @@ public class UserService {
 
     /**
      * 사용자 권한 변경 (MASTER 전용)
-     * TODO 그아웃(토큰 삭제)을 하지 않는 대신,
-     * 시스템의 다른 부분에서 이 사용자의 최신 Role을 DB에서 조회하도록 강제해야 함
      */
     @Transactional
     public UserInfoResponse updateUserRole(String username, Role newRole, User currentUser) {
+        // 1. MASTER 권한 체크
+        if (!currentUser.getRole().equals(Role.MASTER)) {
+            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        }
+
+        // 2. 대상 조회
         User targetUser = getUserByUsername(username);
 
+        // 3. 동일 권한 변경 체크
         if (targetUser.getRole().equals(newRole)) {
             throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
+        // 4. 본인 권한 변경 금지
         if (targetUser.getUsername().equals(currentUser.getUsername())) {
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
 
-        // 권한 업데이트 및 즉시 DB 반영
+        // 5. 업데이트
         targetUser.updateRole(newRole);
         userRepository.saveAndFlush(targetUser);
-
-        // 2. Redis에서 해당 사용자의 Refresh Token 삭제 (로그아웃 효과)
-        // 이를 통해 기존 Access Token 만료 시 재발급을 차단하여 강제 재인증 유도
-        // 참고: 만약 Access Token까지 즉시 무효화하려면 컨트롤러에서 토큰 문자열을 넘겨받아
-        // tokenService.blacklistAccessToken(token, "ROLE_CHANGED") 를 호출해야 함.
-        //tokenService.deleteRefreshToken(targetUser.getId());.
-
 
         return UserInfoResponse.from(targetUser);
     }
 
     /**
-     * TODO 메뉴를 수정할 때 컨트롤러에서 넘겨받은 user 객체의 권한만 믿지 말고, userService를 호출하여 실시간 상태를 체크합니다.
-     * [실시간 권한 검증 유틸]
-     *  * 토큰의 권한이 아닌, DB의 최신 권한을 기준으로 체크합니다.
-     *  * @param userId 체크할 사용자 ID
-     *  * @param requiredRole 필요한 권한 (예: Role.OWNER)
+     * 실시간 권한 검증 유틸
      */
     @Transactional(readOnly = true)
     public void validateUserRole(UUID userId, Role requiredRole) {
@@ -121,7 +120,13 @@ public class UserService {
      */
     @Transactional
     public void deleteUser(String username, User currentUser) {
+        // 1. 권한 체크 (본인 또는 MASTER)
+        validateOwnership(username, currentUser);
+
+        // 2. 대상 조회
         User targetUser = getUserByUsername(username);
+
+        // 3. 삭제 처리
         targetUser.markDeleted(currentUser.getUsername());
     }
 
