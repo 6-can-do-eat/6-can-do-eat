@@ -21,4 +21,10 @@ public class UserInfoRequest {
     // 역할 수정이 필요한 경우 (보통 관리자용)
     private Role role;
 
+    public UserInfoRequest(String username, String password) {
+        this.username = username;
+        this.password = password;
+
+    }
+
 }
