@@ -2,12 +2,16 @@ package com.team6.backend.user.domain.entity;
 
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "p_user")
 public class User extends BaseEntity {
