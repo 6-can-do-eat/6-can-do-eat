@@ -19,6 +19,7 @@ src/main/java/com/team6/backend
     │   └── service
     ├── domain
     │   ├── entity
+    │   ├── exception
     │   └── repository
     └── presentation
         ├── controller

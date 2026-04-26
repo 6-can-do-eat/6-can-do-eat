@@ -1,71 +1,71 @@
 package com.team6.backend.store.domain.entity;
 
 import com.team6.backend.area.domain.entity.Area;
-import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.category.domain.entity.Category;
-import com.team6.backend.menu.domain.entity.Menu;
+import com.team6.backend.global.infrastructure.entity.BaseEntity;
+import com.team6.backend.user.domain.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_store")
-public class Store {
+@SQLRestriction("deleted_at IS NULL")
+public class Store extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "store_id")
-    private UUID id;
+    private UUID storeId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "area_id", nullable = false)
     private Area area;
-
-    @OneToMany(mappedBy = "store")
-    private List<Menu> menus;
-
-    // TODO: Order에 N:1 연관관계 추가
-    // @OneToMany(mappedBy = "store")
-    // private List<Order> orders;
-
-    // TODO: Review에 N:1 연관관계 추가
-    // @OneToMany(mappedBy = "store")
-    // private List<Review> reviews;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String address;
 
     @Column(nullable = false, name = "average_rating")
     private double rating;
 
-    @Column(nullable = false)
-    private boolean is_hidden;
+    @Column(name = "is_hidden", nullable = false)
+    private boolean isHidden;
 
-    public Store(User owner, Category category, Area area, String name, String address, double rating, boolean is_hidden) {
+    public Store(User owner, Category category, Area area, String name, String address) {
         this.owner = owner;
         this.category = category;
         this.area = area;
         this.name = name;
         this.address = address;
-        this.rating = rating;
-        this.is_hidden = is_hidden;
+        this.rating = 0.0;
+        this.isHidden = false;
     }
 
+    public void update(Category category, Area area, String name, String address) {
+        this.category = category;
+        this.area = area;
+        this.name = name;
+        this.address = address;
+    }
+
+    public void hideStore() {
+        this.isHidden = !this.isHidden;
+    }
 }

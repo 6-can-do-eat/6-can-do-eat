@@ -1,24 +1,25 @@
 package com.team6.backend.area.domain.entity;
 
-import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_area")
-public class Area {
+@SQLRestriction("deleted_at IS NULL")
+public class Area extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "area_id")
-    private UUID id;
+    private UUID areaId;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -32,9 +33,6 @@ public class Area {
     @Column(nullable = false)
     private boolean is_active;
 
-    @OneToMany(mappedBy = "area")
-    private List<Store> stores;
-
     public Area(String name, String city, String district, boolean is_active) {
         this.name = name;
         this.city = city;
@@ -42,4 +40,18 @@ public class Area {
         this.is_active = is_active;
     }
 
+    public void update(String name, String city, String district, Boolean is_active) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (city != null) {
+            this.city = city;
+        }
+        if (district != null) {
+            this.district = district;
+        }
+        if (is_active != null) {
+            this.is_active = is_active;
+        }
+    }
 }

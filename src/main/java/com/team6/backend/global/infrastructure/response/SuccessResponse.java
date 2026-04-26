@@ -21,6 +21,10 @@ public class SuccessResponse<T> {
         return new SuccessResponse<>(successCode.getCode(), successCode.getMessage(), data);
     }
 
+    public static <T> SuccessResponse<T> of(SuccessCode successCode, String message, T data) {
+        return new SuccessResponse<>(successCode.getCode(), message, data);
+    }
+
     public static <T> SuccessResponse<T> ok(T data) {
         return of(CommonSuccessCode.OK, data);
     }

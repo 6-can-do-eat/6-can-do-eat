@@ -1,6 +1,7 @@
 package com.team6.backend.order.domain.entity;
 
 
+import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.store.domain.entity.Store;
@@ -30,11 +31,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    /*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", nullable = false)
     private Address address;
-     */
 
     @Column(nullable = false, length = 20)
     private String orderType = "ONLINE";
@@ -44,11 +43,15 @@ public class Order extends BaseEntity {
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
     @Column(nullable = false)
-    private Integer totalPrice = 0;
+    private Long totalPrice = 0L;
 
     private String requestText;
 
     /*
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
+     */
+
     public static Order createOrder(User user, Store store, Address address, String requestText) {
         Order order = new Order();
         order.user = user;
@@ -57,9 +60,7 @@ public class Order extends BaseEntity {
         order.requestText = requestText;
         return order;
     }
-     */
-
-    public void updateToTotalPrice(Integer totalPrice) {
-        this.totalPrice = totalPrice;
-    }
+    public void updateTotalPrice(Long totalPrice) {this.totalPrice = totalPrice;}
+    public void updateOrderStatus(OrderStatus orderStatus) {this.orderStatus = orderStatus;}
+    public void updateRequestText(String requestText) {this.requestText = requestText;}
 }

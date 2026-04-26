@@ -4,5 +4,6 @@ public enum Role {
     MANAGER,
     MASTER,
     CUSTOMER,
-    OWNER
+    OWNER;
+
 }
