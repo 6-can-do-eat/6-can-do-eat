@@ -2,8 +2,8 @@ package com.team6.backend.review.application.service;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
+import com.team6.backend.review.domain.exception.ReviewErrorCode;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
 import com.team6.backend.review.presentation.dto.response.ReviewResponseDto;
 import com.team6.backend.store.domain.entity.Store;
@@ -43,21 +43,21 @@ public class ReviewService {
 
         // 경로에 넘어온 주문이 DB에 있어야 함
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         // 리뷰는 “내 주문”에만 달 수 있음(다른 사람 주문 ID로 생성 시도 차단)
         if (!userId.equals(order.getUser().getId())) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
 
         // 동일 주문으로 이미 리뷰가 있으면 중복 방지
         if (reviewRepository.existsByOrder_Id(orderId)) {
-            throw new ApplicationException(CommonErrorCode.CONFLICT);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_CONFLICT);
         }
 
         // 픽업 완료 상태에만 리뷰 작성 가능
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_BAD_REQUEST);
         }
 
         ReviewEntity review = new ReviewEntity();
@@ -81,9 +81,9 @@ public class ReviewService {
     public ReviewResponseDto getReview(UUID reviewId) {
 
         ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() ->new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() ->new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
         if (review.isDeleted()) {
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
         }
         return new ReviewResponseDto(review);
     }
@@ -108,15 +108,15 @@ public class ReviewService {
         UUID userId = securityUtils.getCurrentUserId();
 
         ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         if (review.isDeleted()) {
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
 
         }
 
         if (!review.getUser().getId().equals(userId)) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
         review.update(request.getRating(), request.getContent());
 
@@ -132,18 +132,18 @@ public class ReviewService {
         UUID userId = securityUtils.getCurrentUserId();
 
         ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         Role role = securityUtils.getCurrentUserRole();
 
         // @PreAuthorize로 막혀도 서비스에서 역할을 한 번 더 제한(방어)
         if (role != Role.CUSTOMER && role != Role.MANAGER && role != Role.MASTER) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
 
         // 고객은 본인이 작성한 리뷰만
         if (role == Role.CUSTOMER && !review.getUser().getId().equals(userId)) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
 
         reviewRepository.flush();
