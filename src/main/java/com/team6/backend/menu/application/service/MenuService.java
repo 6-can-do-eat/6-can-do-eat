@@ -11,6 +11,7 @@ import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
 import com.team6.backend.menu.presentation.dto.response.MenuResponse;
 import com.team6.backend.store.application.service.StoreService;
 import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.store.domain.exception.StoreErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,7 +37,7 @@ public class MenuService {
     public MenuResponse createMenu(UUID storeId, MenuRequest request) {
         Store store = storeService.findStoreById(storeId);
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 null,
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
@@ -50,7 +51,7 @@ public class MenuService {
             description = request.getDescription();
         }
 
-        Menu menu = new Menu(storeId, request.getName(), request.getPrice(), description);
+        Menu menu = new Menu(store, request.getName(), request.getPrice(), description);
         Menu saved = menuRepository.save(menu);
         return new MenuResponse(saved);
     }
@@ -61,11 +62,31 @@ public class MenuService {
         Sort sort = Sort.by(direction, sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
+        String safeKeyword = (keyword != null && !keyword.isBlank()) ? keyword : "";
+        Page<Menu> menuList = menuRepository.searchMenus(storeId, safeKeyword, pageable);
+
+        return menuList.map(MenuResponse::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MenuResponse> getMenusForOwner(UUID storeId, String keyword, int page, int size, String sortBy, boolean isAsc) {
+        Store store = storeService.findStoreById(storeId);
+        authValidator.validateAccess(
+                store.getOwner().getId(),
+                null,
+                List.of(Role.OWNER),
+                StoreErrorCode.STORE_FORBIDDEN
+        );
+
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
         Page<Menu> menuList;
         if (keyword != null && !keyword.isBlank()) {
-            menuList = menuRepository.findByStoreIdAndNameContainingIgnoreCase(storeId, keyword, pageable);
+            menuList = menuRepository.findByStore_StoreIdAndNameContainingIgnoreCase(storeId, keyword, pageable);
         } else {
-            menuList = menuRepository.findByStoreId(storeId, pageable);
+            menuList = menuRepository.findByStore_StoreId(storeId, pageable);
         }
 
         return menuList.map(MenuResponse::new);
@@ -80,9 +101,9 @@ public class MenuService {
     @Transactional
     public MenuResponse updateMenu(UUID menuId, UpdateMenuRequest request) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER, Role.MANAGER),
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
@@ -94,9 +115,9 @@ public class MenuService {
     @Transactional
     public void deleteMenu(UUID menuId) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER), // 무조건 허용
                 List.of(Role.OWNER), // 조건부 허용
                 MenuErrorCode.MENU_FORBIDDEN
@@ -107,9 +128,9 @@ public class MenuService {
     @Transactional
     public MenuResponse hideMenu(UUID menuId) {
         Menu menu = findMenuById(menuId);
-        Store store = storeService.findStoreById(menu.getStoreId());
+        Store store = menu.getStore();
         authValidator.validateAccess(
-                store.getOwnerId(),
+                store.getOwner().getId(),
                 List.of(Role.MASTER, Role.MANAGER),
                 List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN

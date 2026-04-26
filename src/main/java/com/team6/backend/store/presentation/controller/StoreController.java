@@ -47,6 +47,22 @@ public class StoreController {
         return ResponseEntity.ok(SuccessResponse.ok(stores));
     }
 
+    /* 가게 목록 조회 (본인 소유 가게만) */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<SuccessResponse<Page<StoreResponse>>> getStoresForOwner(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID areaId,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "false") boolean isAsc
+    ) {
+        Page<StoreResponse> stores = storeService.getStoresForOwner(keyword, categoryId, areaId, page, size, sortBy, isAsc);
+        return ResponseEntity.ok(SuccessResponse.ok(stores));
+    }
+
     /* 가게 상세 조회 */
     @GetMapping("/{storeId}")
     public ResponseEntity<SuccessResponse<StoreResponse>> getStoreById(@PathVariable UUID storeId) {

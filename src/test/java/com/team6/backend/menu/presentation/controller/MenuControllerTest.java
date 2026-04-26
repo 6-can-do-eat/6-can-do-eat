@@ -1,11 +1,15 @@
 package com.team6.backend.menu.presentation.controller;
 
+import com.team6.backend.area.domain.entity.Area;
+import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.global.infrastructure.config.security.config.SecurityConfig;
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtAuthenticationEntryPoint;
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtFilter;
 import com.team6.backend.menu.application.service.MenuService;
 import com.team6.backend.menu.domain.entity.Menu;
 import com.team6.backend.menu.presentation.dto.response.MenuResponse;
+import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.user.domain.entity.User;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,18 +63,25 @@ class MenuControllerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // 1. JWT 필터 통과 모킹 (SecurityContext를 건드리지 않고 다음 필터로 넘김)
         willAnswer(invocation -> {
             invocation.getArgument(2, FilterChain.class)
                     .doFilter(invocation.getArgument(0), invocation.getArgument(1));
             return null;
         }).given(jwtFilter).doFilter(any(), any(), any());
 
-        // 2. Menu 엔티티 생성 및 ID 강제 주입
-        Menu mockMenu = new Menu(storeId, "테스트 메뉴", 10000, "테스트 설명");
-        ReflectionTestUtils.setField(mockMenu, "menuId", menuId); // Null 방지
+        User mockUser = org.mockito.Mockito.mock(User.class);
+        given(mockUser.getId()).willReturn(UUID.randomUUID());
+        Category mockCategory = new Category("테스트 카테고리");
+        ReflectionTestUtils.setField(mockCategory, "categoryId", UUID.randomUUID());
+        Area mockArea = new Area("테스트 지역", "서울시", "강남구", true);
+        ReflectionTestUtils.setField(mockArea, "areaId", UUID.randomUUID());
 
-        // 3. Response DTO 초기화
+        Store mockStore = new Store(mockUser, mockCategory, mockArea, "테스트 가게", "서울시 종로구");
+        ReflectionTestUtils.setField(mockStore, "storeId", storeId);
+
+        Menu mockMenu = new Menu(mockStore, "테스트 메뉴", 10000, "테스트 설명");
+        ReflectionTestUtils.setField(mockMenu, "menuId", menuId);
+
         mockResponse = new MenuResponse(mockMenu);
     }
 
@@ -176,7 +187,7 @@ class MenuControllerTest {
     @WithMockUser(username = "owner1", roles = "OWNER")
     void createMenu_Fail_Validation_BlankName() throws Exception {
         Map<String, Object> request = new HashMap<>();
-        request.put("name", ""); // 공백
+        request.put("name", "");
         request.put("price", 10000);
         request.put("aiDescription", false);
 
@@ -196,8 +207,8 @@ class MenuControllerTest {
         Map<String, Object> request = new HashMap<>();
         request.put("name", "테스트 메뉴");
         request.put("price", 10000);
-        request.put("aiDescription", true); // AI 활성화
-        request.put("aiPrompt", null);      // 프롬프트 없음
+        request.put("aiDescription", true);
+        request.put("aiPrompt", null);
 
         mockMvc.perform(post("/api/v1/stores/{storeId}/menus", storeId)
                         .with(csrf())
@@ -254,7 +265,6 @@ class MenuControllerTest {
     void createMenu_Fail_Validation_NullPrice() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("name", "테스트 메뉴");
-        // price를 의도적으로 누락
         request.put("aiDescription", false);
 
         mockMvc.perform(post("/api/v1/stores/{storeId}/menus", storeId)
@@ -271,7 +281,7 @@ class MenuControllerTest {
     @WithMockUser(username = "manager1", roles = "MANAGER")
     void updateMenu_Fail_Validation_BlankName() throws Exception {
         Map<String, Object> request = new HashMap<>();
-        request.put("name", "   "); // 공백 문자열
+        request.put("name", "   ");
         request.put("price", 15000);
 
         mockMvc.perform(put("/api/v1/menus/{menuId}", menuId)
@@ -289,7 +299,6 @@ class MenuControllerTest {
     void updateMenu_Fail_Validation_NullPrice() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("name", "수정된 메뉴");
-        // price 의도적 누락
 
         mockMvc.perform(put("/api/v1/menus/{menuId}", menuId)
                         .with(csrf())

@@ -2,6 +2,7 @@ package com.team6.backend.menu.domain.entity;
 
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.menu.presentation.dto.request.UpdateMenuRequest;
+import com.team6.backend.store.domain.entity.Store;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "p_menu")
-@SQLRestriction("deleted_at IS NULL") // 삭제된 데이터 필터링
+@SQLRestriction("deleted_at IS NULL")
 public class Menu extends BaseEntity {
 
     @Id
@@ -22,8 +23,9 @@ public class Menu extends BaseEntity {
     @Column(name = "menu_id")
     private UUID menuId;
 
-    @Column(name = "store_id", nullable = false)
-    private UUID storeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -37,8 +39,8 @@ public class Menu extends BaseEntity {
     @Column(name = "is_hidden", nullable = false)
     private boolean isHidden;
 
-    public Menu(UUID storeId, String name, int price, String description) {
-        this.storeId = storeId;
+    public Menu(Store store, String name, int price, String description) {
+        this.store = store;
         this.name = name;
         this.price = price;
         this.description = description;

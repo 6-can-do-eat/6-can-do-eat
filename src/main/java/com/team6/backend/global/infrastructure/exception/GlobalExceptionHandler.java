@@ -19,7 +19,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ErrorResponse> handleApplicationException(ApplicationException e) {
         ErrorCode errorCode = e.getErrorCode();
-        log.warn(e.getMessage(), e);
+        log.warn(e.getMessage());
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode));
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
         ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
-        log.warn(e.getMessage(), e);
+        log.warn(e.getMessage());
 
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegal(IllegalArgumentException e) {
         ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
-        log.warn(e.getMessage(), e);
+        log.warn(e.getMessage());
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode, e.getMessage()));
@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
         ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
-        log.warn(e.getMessage(), e);
+        log.warn(e.getMessage());
 
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode, "올바르지 않은 요청 형식입니다."));
