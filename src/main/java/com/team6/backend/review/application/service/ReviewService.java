@@ -6,6 +6,7 @@ import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
 import com.team6.backend.review.presentation.dto.response.ReviewResponseDto;
+import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import com.team6.backend.order.domain.entity.Order;
@@ -54,10 +55,10 @@ public class ReviewService {
             throw new ApplicationException(CommonErrorCode.CONFLICT);
         }
 
-//        // 픽업 완료 상태에만 리뷰 작성 가능
-//        if (order.getStatus() != OrderStatus.COMPLETED) {
-//            throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
-//        }
+        // 픽업 완료 상태에만 리뷰 작성 가능
+        if (order.getOrderStatus() != OrderStatus.COMPLETED) {
+            throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
 
         ReviewEntity review = new ReviewEntity();
         review.createReview(
@@ -66,6 +67,10 @@ public class ReviewService {
                 reviewRequestDto.getContent()
         );
         ReviewEntity saved = reviewRepository.save(review);
+
+        // 리뷰 생성 후 영속성 컨텍스트를 DB에 플러시하여 집계 쿼리에 포함되도록 한 후 평균 평점 갱신
+        reviewRepository.flush();
+        updateStoreAverageRating(order.getStore());
 
         return new ReviewResponseDto(saved);
 
@@ -115,6 +120,9 @@ public class ReviewService {
         }
         review.update(request.getRating(), request.getContent());
 
+        reviewRepository.flush();
+        updateStoreAverageRating(review.getStore());
+
         return new ReviewResponseDto(review);
     }
 
@@ -138,6 +146,14 @@ public class ReviewService {
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
 
+        reviewRepository.flush();
+        updateStoreAverageRating(review.getStore());
+
         review.delete(String.valueOf(userId));
+    }
+
+    private void updateStoreAverageRating(Store store) {
+        Double averageRating = reviewRepository.calculateAverageRatingByStoreId(store.getStoreId());
+        store.updateRating(averageRating);
     }
 }

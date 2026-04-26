@@ -33,6 +33,9 @@ public class StoreResponse {
     @Schema(description = "숨김 여부", example = "false")
     private final boolean isHidden;
 
+    @Schema(description = "평균 평점", example = "4.5")
+    private final double rating;
+
     public StoreResponse(Store store) {
         this.storeId = store.getStoreId();
         this.categoryId = store.getCategory().getCategoryId();
@@ -42,6 +45,7 @@ public class StoreResponse {
         this.areaName = store.getArea().getName();
         this.address = store.getAddress();
         this.isHidden = store.isHidden();
+        this.rating = store.getRating();
     }
 
 }
