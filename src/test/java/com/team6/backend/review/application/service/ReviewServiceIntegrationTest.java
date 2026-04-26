@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
-@ActiveProfiles("test")
 @Transactional
 class ReviewServiceIntegrationTest {
 
@@ -65,13 +63,8 @@ class ReviewServiceIntegrationTest {
         return user;
     }
 
-    private Order createMockOrder(User user, Store store, Address address) throws Exception {
-        java.lang.reflect.Constructor<Order> constructor = Order.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        Order order = constructor.newInstance();
-        ReflectionTestUtils.setField(order, "user", user);
-        ReflectionTestUtils.setField(order, "store", store);
-        ReflectionTestUtils.setField(order, "address", address);
+    private Order createMockOrder(User user, Store store, Address address) {
+        Order order = Order.createOrder(user, store, address, null);
         ReflectionTestUtils.setField(order, "orderType", "ONLINE");
         ReflectionTestUtils.setField(order, "orderStatus", OrderStatus.COMPLETED);
         return order;
@@ -86,7 +79,7 @@ class ReviewServiceIntegrationTest {
 
     @Test
     @DisplayName("리뷰 작성 서비스 로직 실행 시, DB의 가게 평균 평점이 실제로 갱신되어야 한다.")
-    void createReview_updatesStoreRating_realIntegrationTest() throws Exception {
+    void createReview_updatesStoreRating_realIntegrationTest() {
         User user = createMockUser("testUser1", "testPassword1", Role.CUSTOMER);
         userRepository.save(user);
 
