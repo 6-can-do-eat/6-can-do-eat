@@ -2,6 +2,7 @@ package com.team6.backend;
 
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtUtil;
 import com.team6.backend.global.infrastructure.redis.RedisService;
+import com.team6.backend.payment.infrastructure.TossPaymentClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -26,6 +27,9 @@ class SixCanDoEatApplicationTests {
     // JwtUtil도 Mock으로 대체하여 환경 변수 주입 과정을 생략합니다.
     @MockitoBean
     private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private TossPaymentClient tossPaymentClient;
 
     @Test
     void contextLoads() {
