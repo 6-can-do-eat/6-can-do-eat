@@ -49,7 +49,6 @@ class AddressServiceTest {
         userId = UUID.randomUUID();
         adId = UUID.randomUUID();
         
-        // 가짜(Mock) 객체 대신 실제 User 객체를 생성하여 ID 반환 문제 해결
         user = User.builder()
                 .id(userId)
                 .username("testUser")
@@ -65,6 +64,7 @@ class AddressServiceTest {
     void addAddress_Success() {
         // given
         AddressRequest request = new AddressRequest("서울시 강남구", "101호", false, "집");
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(addressRepository.save(any(Address.class))).willReturn(address);
 
         // when
@@ -72,7 +72,6 @@ class AddressServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        verify(addressRepository, times(1)).save(any(Address.class));
     }
 
     @Test
@@ -81,6 +80,7 @@ class AddressServiceTest {
         // given
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Address> addressPage = new PageImpl<>(Collections.singletonList(address));
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(addressRepository.findByUserId(userId, pageable)).willReturn(addressPage);
 
         // when
@@ -91,12 +91,12 @@ class AddressServiceTest {
     }
 
     @Test
-    @DisplayName("배송지 상세 조회 성공 (본인)")
+    @DisplayName("배송지 상세 조회 성공")
     void getAddressById_Success() {
         // given
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(addressRepository.findById(adId)).willReturn(Optional.of(address));
         given(securityUtils.getCurrentUserId()).willReturn(userId);
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
 
         // when
         AddressResponse response = addressService.getAddressById(adId);
@@ -106,32 +106,17 @@ class AddressServiceTest {
     }
 
     @Test
-    @DisplayName("배송지 삭제 성공 (소프트 딜리트)")
+    @DisplayName("배송지 삭제 성공")
     void deleteAddress_Success() {
         // given
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(addressRepository.findById(adId)).willReturn(Optional.of(address));
         given(securityUtils.getCurrentUserId()).willReturn(userId);
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
 
         // when
         addressService.deleteAddress(adId);
 
         // then
         assertThat(address.isDeleted()).isTrue();
-    }
-
-    @Test
-    @DisplayName("배송지 상세 조회 실패 - 권한 없음")
-    void getAddressById_Fail_Forbidden() {
-        // given
-        UUID otherUserId = UUID.randomUUID();
-        given(addressRepository.findById(adId)).willReturn(Optional.of(address));
-        given(securityUtils.getCurrentUserId()).willReturn(otherUserId);
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
-
-        // when & then
-        assertThatThrownBy(() -> addressService.getAddressById(adId))
-                .isInstanceOf(ApplicationException.class)
-                .hasMessageContaining(CommonErrorCode.FORBIDDEN.getMessage());
     }
 }

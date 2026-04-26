@@ -1,5 +1,6 @@
 package com.team6.backend.address.presentation.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +15,11 @@ public class AddressRequest {
     private String address;
 
     private String detail;
+
+    // TODO: JSON 필드명 불일치
+    @JsonProperty("isDefault")
     private boolean isDefault;
+
     private String alias;
 
 }
