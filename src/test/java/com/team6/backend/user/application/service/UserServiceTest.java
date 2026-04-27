@@ -1,6 +1,7 @@
 package com.team6.backend.user.application.service;
 
 import com.team6.backend.auth.application.service.TokenService;
+import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.redis.RedisService;
@@ -52,6 +53,9 @@ class UserServiceTest {
     @Mock
     private RedisService redisService;
 
+    @Mock
+    private SecurityUtils securityUtils;
+
     private User testUser;
     private User masterUser;
     private UserInfoRequest userInfoRequest;
@@ -67,30 +71,34 @@ class UserServiceTest {
     @DisplayName("사용자 상세 조회 성공")
     void getUserDetail_success() {
         // Given
-        given(userRepository.findByUsernameAndDeletedAtIsNull("testuser"))
+        given(securityUtils.getCurrentUserId()).willReturn(testUser.getId());
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
+        given(userRepository.findByIdAndDeletedAtIsNull(testUser.getId()))
                 .willReturn(Optional.of(testUser));
 
         // When
-        UserInfoResponse response = userService.getUserDetail("testuser");
+        UserInfoResponse response = userService.getUserDetail(testUser.getId());
 
         // Then
         assertThat(response).isNotNull();
         assertThat(response.getUsername()).isEqualTo("testuser");
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull("testuser");
+        then(userRepository).should(times(1)).findByIdAndDeletedAtIsNull(testUser.getId());
     }
 
     @Test
     @DisplayName("사용자 상세 조회 실패 - 사용자를 찾을 수 없음")
     void getUserDetail_notFound() {
         // Given
-        given(userRepository.findByUsernameAndDeletedAtIsNull(anyString()))
+        UUID userId = UUID.randomUUID();
+        given(securityUtils.getCurrentUserId()).willReturn(userId);
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.MASTER);
+        given(userRepository.findByIdAndDeletedAtIsNull(userId))
                 .willReturn(Optional.empty());
 
         // When & Then
         ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.getUserDetail("nonexistentUser"));
+                () -> userService.getUserDetail(userId));
         assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(anyString());
     }
 
     @Test
@@ -131,51 +139,37 @@ class UserServiceTest {
     @DisplayName("사용자 정보 수정 성공 - 일반 사용자 본인 수정")
     void updateUser_selfUpdate_success() {
         // Given
-        String originalUsername = "testuser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(originalUsername))
+        given(securityUtils.getCurrentUserId()).willReturn(testUser.getId());
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
+        given(userRepository.findByIdAndDeletedAtIsNull(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(passwordEncoder.encode(userInfoRequest.getPassword())).willReturn("newEncodedPassword");
 
         // When
-        UserInfoResponse response = userService.updateUser(originalUsername, userInfoRequest, testUser);
+        UserInfoResponse response = userService.updateUser(testUser.getId(), userInfoRequest);
 
         // Then
         assertThat(response).isNotNull();
         assertThat(response.getUsername()).isEqualTo(userInfoRequest.getUsername());
         assertThat(testUser.getPassword()).isEqualTo("newEncodedPassword");
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(originalUsername);
     }
 
     @Test
     @DisplayName("사용자 정보 수정 성공 - MASTER가 다른 사용자 수정")
     void updateUser_masterUpdateOtherUser_success() {
         // Given
-        String targetUsername = "testuser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(targetUsername))
+        given(securityUtils.getCurrentUserId()).willReturn(masterUser.getId());
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.MASTER);
+        given(userRepository.findByIdAndDeletedAtIsNull(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(passwordEncoder.encode(userInfoRequest.getPassword())).willReturn("newEncodedPassword");
 
         // When
-        UserInfoResponse response = userService.updateUser(targetUsername, userInfoRequest, masterUser);
+        UserInfoResponse response = userService.updateUser(testUser.getId(), userInfoRequest);
 
         // Then
         assertThat(response).isNotNull();
         assertThat(response.getUsername()).isEqualTo(userInfoRequest.getUsername());
-        assertThat(testUser.getPassword()).isEqualTo("newEncodedPassword");
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(targetUsername);
-    }
-
-    @Test
-    @DisplayName("사용자 정보 수정 실패 - 권한 없음 (일반 사용자가 다른 사용자 수정 시도)")
-    void updateUser_forbidden() {
-        // Given
-        String anotherUsername = "another";
-
-        // When & Then
-        ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.updateUser(anotherUsername, userInfoRequest, testUser));
-        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.FORBIDDEN);
-        then(userRepository).should(never()).findByUsernameAndDeletedAtIsNull(anyString());
     }
 
     @Test
@@ -183,49 +177,62 @@ class UserServiceTest {
     void updateUserRole_success() {
         // Given
         User targetUser = new User(UUID.randomUUID(), "targetUser", "pw", Role.CUSTOMER, "Target Nickname");
-        String targetUsername = "targetUser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(targetUsername))
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.MASTER);
+        given(securityUtils.getCurrentUserId()).willReturn(masterUser.getId());
+        given(userRepository.findByIdAndDeletedAtIsNull(targetUser.getId()))
                 .willReturn(Optional.of(targetUser));
-        given(userRepository.saveAndFlush(any(User.class))).willReturn(targetUser);
 
         // When
-        UserInfoResponse response = userService.updateUserRole(targetUsername, Role.MASTER, masterUser);
+        UserInfoResponse response = userService.updateUserRole(targetUser.getId(), Role.OWNER);
 
         // Then
         assertThat(response).isNotNull();
-        assertThat(response.getRole()).isEqualTo(Role.MASTER);
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(targetUsername);
+        assertThat(response.getRole()).isEqualTo(Role.OWNER);
         then(userRepository).should(times(1)).saveAndFlush(targetUser);
         then(tokenService).should(times(1)).deleteRefreshToken(targetUser.getId());
-        then(redisService).should(times(1)).set(anyString(), anyString(), any());
     }
 
     @Test
-    @DisplayName("사용자 권한 변경 실패 - 변경하려는 권한이 현재 권한과 동일")
-    void updateUserRole_invalidInput_sameRole() {
+    @DisplayName("사용자 권한 변경 실패 - 일반 사용자가 시도")
+    void updateUserRole_forbidden_notMaster() {
         // Given
-        String username = "testuser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(username))
-                .willReturn(Optional.of(testUser));
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
 
         // When & Then
-        ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.updateUserRole(username, Role.CUSTOMER, masterUser));
-        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThrows(ApplicationException.class,
+                () -> userService.updateUserRole(testUser.getId(), Role.OWNER));
     }
 
     @Test
-    @DisplayName("사용자 권한 변경 실패 - MASTER가 본인 권한 변경 시도")
-    void updateUserRole_forbidden_masterSelfChange() {
+    @DisplayName("사용자 권한 변경 실패 - 본인 권한 변경 시도")
+    void updateUserRole_forbidden_selfChange() {
         // Given
-        String username = "master";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(username))
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.MASTER);
+        given(securityUtils.getCurrentUserId()).willReturn(masterUser.getId());
+        given(userRepository.findByIdAndDeletedAtIsNull(masterUser.getId()))
                 .willReturn(Optional.of(masterUser));
 
         // When & Then
         ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.updateUserRole(username, Role.CUSTOMER, masterUser));
+                () -> userService.updateUserRole(masterUser.getId(), Role.CUSTOMER));
         assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("사용자 삭제 성공")
+    void deleteUser_success() {
+        // Given
+        given(securityUtils.getCurrentUserId()).willReturn(testUser.getId());
+        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
+        given(userRepository.findByIdAndDeletedAtIsNull(testUser.getId()))
+                .willReturn(Optional.of(testUser));
+
+        // When
+        userService.deleteUser(testUser.getId());
+
+        // Then
+        assertThat(testUser.getDeletedAt()).isNotNull();
+        then(tokenService).should(times(1)).deleteRefreshToken(testUser.getId());
     }
 
     @Test
@@ -239,78 +246,5 @@ class UserServiceTest {
 
         // Then
         then(userRepository).should(times(1)).findById(testUser.getId());
-    }
-
-    @Test
-    @DisplayName("사용자 권한 검증 실패 - 사용자를 찾을 수 없음")
-    void validateUserRole_notFound() {
-        // Given
-        given(userRepository.findById(any(UUID.class))).willReturn(Optional.empty());
-
-        // When & Then
-        ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.validateUserRole(UUID.randomUUID(), Role.CUSTOMER));
-        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("사용자 권한 검증 실패 - 권한 불일치")
-    void validateUserRole_forbidden() {
-        // Given
-        given(userRepository.findById(testUser.getId())).willReturn(Optional.of(testUser));
-
-        // When & Then
-        ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.validateUserRole(testUser.getId(), Role.MASTER));
-        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.FORBIDDEN);
-    }
-
-    @Test
-    @DisplayName("사용자 삭제 성공 - 일반 사용자 본인 삭제")
-    void deleteUser_selfDelete_success() {
-        // Given
-        String username = "testuser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(username))
-                .willReturn(Optional.of(testUser));
-
-        // When
-        userService.deleteUser(username, testUser);
-
-        // Then
-        assertThat(testUser.getDeletedAt()).isNotNull();
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(username);
-        then(tokenService).should(times(1)).deleteRefreshToken(testUser.getId());
-        then(redisService).should(times(1)).delete(anyString());
-    }
-
-    @Test
-    @DisplayName("사용자 삭제 성공 - MASTER가 다른 사용자 삭제")
-    void deleteUser_masterDeleteOtherUser_success() {
-        // Given
-        String username = "testuser";
-        given(userRepository.findByUsernameAndDeletedAtIsNull(username))
-                .willReturn(Optional.of(testUser));
-
-        // When
-        userService.deleteUser(username, masterUser);
-
-        // Then
-        assertThat(testUser.getDeletedAt()).isNotNull();
-        then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(username);
-        then(tokenService).should(times(1)).deleteRefreshToken(testUser.getId());
-        then(redisService).should(times(1)).delete(anyString());
-    }
-
-    @Test
-    @DisplayName("사용자 삭제 실패 - 권한 없음 (일반 사용자가 다른 사용자 삭제 시도)")
-    void deleteUser_forbidden() {
-        // Given
-        String anotherUsername = "another";
-
-        // When & Then
-        ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> userService.deleteUser(anotherUsername, testUser));
-        assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.FORBIDDEN);
-        then(userRepository).should(never()).findByUsernameAndDeletedAtIsNull(anyString());
     }
 }

@@ -30,16 +30,24 @@ public class AddressService {
 
     // 배송지 등록: CUSTOMER 전용
     @Transactional
-    public AddressResponse addAddress(AddressRequest request, User user)  {
+    public AddressResponse addAddress(AddressRequest request)  {
         validateRole(Role.CUSTOMER);
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userInfoRepository.getReferenceById(userId); // DB 조회 없이 프록시 객체 생성
         Address address = addressRepository.save(new Address(request, user));
         return new AddressResponse(address);
     }
 
     // 내 배송지 목록 조회: CUSTOMER 전용
     @Transactional(readOnly = true)
-    public Page<AddressResponse> getAddress(User user, String alias, int page, int size, String sortByTime, boolean isAsc) {
+    public Page<AddressResponse> getAddress(UUID userId, String alias, int page, int size, String sortByTime, boolean isAsc) {
         validateRole(Role.CUSTOMER);
+        
+        // 본인 확인 (경로의 userId와 로그인한 유저 ID 비교)
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        if (!currentUserId.equals(userId)) {
+            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        }
         
         Sort.Direction sortDirection = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(sortDirection, sortByTime);
@@ -47,9 +55,9 @@ public class AddressService {
 
         Page<Address> addressList;
         if(alias != null && !alias.isEmpty()){
-            addressList = addressRepository.findByUserIdAndAliasContainingIgnoreCase(user.getId(), alias, pageable);
+            addressList = addressRepository.findByUserIdAndAliasContainingIgnoreCase(userId, alias, pageable);
         } else {
-            addressList = addressRepository.findByUserId(user.getId(), pageable);
+            addressList = addressRepository.findByUserId(userId, pageable);
         }
         return addressList.map(AddressResponse::new);
     }
