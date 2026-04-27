@@ -2,7 +2,6 @@ package com.team6.backend.payment.domain;
 
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.order.domain.entity.Order;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -47,7 +46,7 @@ public class Payment extends BaseEntity {
 
     public void updatePaymentStatus(PaymentStatus paymentStatus) {
         if (this.status.canChangeTo(paymentStatus)) {
-            throw new ApplicationException(CommonErrorCode.INVALID_INPUT_VALUE);
+            throw new ApplicationException(PaymentErrorCode.PAYMENT_INVALID_STATUS);
         }
         this.status = paymentStatus;
     }
