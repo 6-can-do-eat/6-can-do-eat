@@ -11,7 +11,7 @@ import com.team6.backend.global.infrastructure.config.AuditorConfig;
 import com.team6.backend.global.infrastructure.config.JpaAuditingConfig;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.user.domain.entity.Role;
@@ -63,7 +63,7 @@ class ReviewRepositoryTest {
     @DisplayName("성공: 주문 ID로 리뷰 존재 여부를 확인한다.")
     void existsByOrder_Id_Success() {
         // given
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(order, 5, "최고예요!");
         reviewRepository.save(review);
 
@@ -78,12 +78,12 @@ class ReviewRepositoryTest {
     @DisplayName("성공: 특정 가게의 삭제되지 않은 리뷰를 페이징 조회한다.")
     void findByStore_StoreIdAndDeletedAtIsNull_Success() {
         // given
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(order, 4, "맛있어요");
         reviewRepository.save(review);
 
         // when
-        Page<ReviewEntity> reviewPage = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
+        Page<Review> reviewPage = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
                 store.getStoreId(), PageRequest.of(0, 10));
 
         // then
@@ -97,11 +97,11 @@ class ReviewRepositoryTest {
         // given: 리뷰 2개 생성 (각기 다른 주문 필요)
         Order order2 = orderRepository.save(Order.createOrder(customer, store, order.getAddress(), "두번째 주문"));
 
-        ReviewEntity r1 = new ReviewEntity();
+        Review r1 = new Review();
         r1.createReview(order, 5, "5점 리뷰");
         reviewRepository.save(r1);
 
-        ReviewEntity r2 = new ReviewEntity();
+        Review r2 = new Review();
         r2.createReview(order2, 3, "3점 리뷰");
         reviewRepository.save(r2);
 
@@ -116,11 +116,11 @@ class ReviewRepositoryTest {
     @DisplayName("성공: 새로운 리뷰를 저장한다.")
     void save_Review_Success() {
         // given
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(order, 5, "정말 맛있어요!");
 
         // when
-        ReviewEntity savedReview = reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
 
         // then
         assertThat(savedReview.getId()).isNotNull();
@@ -137,7 +137,7 @@ class ReviewRepositoryTest {
     @Test
     @DisplayName("실패: 리뷰가 없는 가게의 페이징 조회 시 빈 결과를 반환한다.")
     void findByStore_EmptyReview_ReturnsEmptyPage() {
-        Page<ReviewEntity> page = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
+        Page<Review> page = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
                 store.getStoreId(), PageRequest.of(0, 10));
         assertThat(page.isEmpty()).isTrue();
     }
@@ -146,13 +146,13 @@ class ReviewRepositoryTest {
     @DisplayName("실패: 삭제된 리뷰만 있는 가게의 페이징 조회 시 빈 결과를 반환한다.")
     void findByStore_AllDeleted_ReturnsEmptyPage() {
         // given
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(order, 5, "삭제될 리뷰");
         review.delete("admin"); // markDeleted 호출됨
         reviewRepository.save(review);
 
         // when
-        Page<ReviewEntity> page = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
+        Page<Review> page = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(
                 store.getStoreId(), PageRequest.of(0, 10));
 
         // then
@@ -169,7 +169,7 @@ class ReviewRepositoryTest {
     @Test
     @DisplayName("실패: 삭제된 리뷰만 있는 가게의 평균 별점은 0.0을 반환한다.")
     void calculateAverageRating_AllDeleted_ReturnsZero() {
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(order, 5, "삭제될 리뷰");
         review.delete("admin");
         reviewRepository.save(review);
@@ -181,7 +181,7 @@ class ReviewRepositoryTest {
     @Test
     @DisplayName("실패: 별점이 1점 미만일 경우 생성 시 예외가 발생한다.")
     void createReview_RatingUnderOne_ThrowsException() {
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         assertThatThrownBy(() -> review.createReview(order, 0, "나빠요"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("별점 1점에서 5점 사이만 가능합니다.");
@@ -190,7 +190,7 @@ class ReviewRepositoryTest {
     @Test
     @DisplayName("실패: 별점이 5점을 초과할 경우 생성 시 예외가 발생한다.")
     void createReview_RatingOverFive_ThrowsException() {
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         assertThatThrownBy(() -> review.createReview(order, 6, "너무 좋아요"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("별점 1점에서 5점 사이만 가능합니다.");
@@ -200,8 +200,8 @@ class ReviewRepositoryTest {
     @DisplayName("실패: 필수값인 별점(rating)이 누락된 경우 저장이 실패한다.")
     void save_NullRating_ThrowsException() {
         // createReview를 거치지 않고 강제로 set 하거나, DB 제약조건 확인
-        // ReviewEntity의 필드 @Column(nullable = false) 기반
-        ReviewEntity review = new ReviewEntity();
+        // Review의 필드 @Column(nullable = false) 기반
+        Review review = new Review();
         // createReview를 안쓰고 직접 필드 채우기는 어려우나, Reflection 등으로 null 주입 가정 시
         assertThatThrownBy(() -> reviewRepository.saveAndFlush(review))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -210,7 +210,7 @@ class ReviewRepositoryTest {
     @Test
     @DisplayName("실패: 필수값인 주문(order)이 누락된 경우 저장이 실패한다.")
     void save_NullOrder_ThrowsException() {
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         // rating만 있고 order가 없는 경우
         assertThatThrownBy(() -> reviewRepository.saveAndFlush(review))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -220,12 +220,12 @@ class ReviewRepositoryTest {
     @DisplayName("실패: 동일한 주문(order_id)에 대해 중복 리뷰 저장 시 유니크 제약 조건 위반이 발생한다.")
     void save_DuplicateOrderReview_ThrowsException() {
         // given: 첫 번째 리뷰 저장
-        ReviewEntity r1 = new ReviewEntity();
+        Review r1 = new Review();
         r1.createReview(order, 5, "첫 리뷰");
         reviewRepository.save(r1);
 
         // when & then: 동일한 order로 두 번째 리뷰 저장 시도 (OneToOne unique=true)
-        ReviewEntity r2 = new ReviewEntity();
+        Review r2 = new Review();
         r2.createReview(order, 3, "중복 리뷰");
 
         assertThatThrownBy(() -> reviewRepository.saveAndFlush(r2))
