@@ -9,7 +9,7 @@ import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
-import com.team6.backend.user.domain.repository.userInfoRepository;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class AddressService {
 
     private final AddressRepository addressRepository;
-    private final userInfoRepository userInfoRepository;
+    private final UserInfoRepository userInfoRepository;
     private final SecurityUtils securityUtils;
 
     // 배송지 등록: CUSTOMER 전용
