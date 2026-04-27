@@ -66,7 +66,7 @@ class ReviewServiceIntegrationTest {
     private Order createMockOrder(User user, Store store, Address address) {
         Order order = Order.createOrder(user, store, address, null);
         ReflectionTestUtils.setField(order, "orderType", "ONLINE");
-        ReflectionTestUtils.setField(order, "orderStatus", OrderStatus.COMPLETED);
+        ReflectionTestUtils.setField(order, "status", OrderStatus.COMPLETED);
         return order;
     }
 

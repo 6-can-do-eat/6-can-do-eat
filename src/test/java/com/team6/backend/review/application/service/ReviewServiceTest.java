@@ -85,7 +85,7 @@ class ReviewServiceTest {
         given(securityUtils.getCurrentUserId()).willReturn(userId);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(mockOrder.getUser()).willReturn(mockUser);
-        given(mockOrder.getOrderStatus()).willReturn(OrderStatus.COMPLETED);
+        given(mockOrder.getStatus()).willReturn(OrderStatus.COMPLETED);
         given(mockOrder.getStore()).willReturn(mockStore);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
 
@@ -139,7 +139,7 @@ class ReviewServiceTest {
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockUser.getId()).willReturn(userId);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
-        given(mockOrder.getOrderStatus()).willReturn(OrderStatus.PENDING); // 완료 상태 아님
+        given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING); // 완료 상태 아님
 
         // when & then
         ApplicationException exception = assertThrows(ApplicationException.class,

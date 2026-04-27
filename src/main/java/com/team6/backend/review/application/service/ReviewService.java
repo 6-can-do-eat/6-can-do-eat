@@ -56,7 +56,7 @@ public class ReviewService {
         }
 
         // 픽업 완료 상태에만 리뷰 작성 가능
-        if (order.getOrderStatus() != OrderStatus.COMPLETED) {
+        if (order.getStatus() != OrderStatus.COMPLETED) {
             throw new ApplicationException(ReviewErrorCode.REVIEW_BAD_REQUEST);
         }
 
