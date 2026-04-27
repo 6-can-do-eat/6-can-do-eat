@@ -28,3 +28,4 @@ REDIS_PORT: 6379
 JWT_SECRET_KEY: "test_secret_key_for_testing_purposes_only_1234567890"
 JWT_ACCESS_TOKEN_EXPIRATION: 99999999
 JWT_REFRESH_TOKEN_EXPIRATION: 99999999
+TOSS_SECRET_KEY: "test_secret_key_for_testing_purposes_only_1234567890"
