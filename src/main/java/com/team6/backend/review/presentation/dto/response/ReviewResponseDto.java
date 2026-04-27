@@ -1,6 +1,6 @@
 package com.team6.backend.review.presentation.dto.response;
 
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,7 +34,7 @@ public class ReviewResponseDto {
     @Schema(description = "연관 리뷰 리스트 (현재는 단일 조회 시 빈 리스트로 반환될 수 있음)")
     private List<ReviewResponseDto> reviewList = new ArrayList<>();
 
-    public ReviewResponseDto(ReviewEntity review) {
+    public ReviewResponseDto(Review review) {
         this.reviewId = review.getId();
         this.userId = review.getUser().getId();
         this.storeId = review.getStore().getStoreId();

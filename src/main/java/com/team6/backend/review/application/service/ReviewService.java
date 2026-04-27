@@ -12,8 +12,9 @@ import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import com.team6.backend.review.domain.repository.ReviewRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import java.util.UUID;
  * 주문(1:1) 기준으로 작성·조회·수정·소프트 삭제하는 리뷰 유스케이스.
  * 작성자 검증(본인 주문), 역할별 삭제 권한은 본 서비스에서 처리한다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
@@ -40,12 +42,12 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDto createReview(UUID orderId, ReviewRequestDto reviewRequestDto) {
 
-
-        UUID userId = securityUtils.getCurrentUserId();
-
         // 경로에 넘어온 주문이 DB에 있어야 함
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[REVIEW] 리뷰 생성 실패: 주문을 찾을 수 없습니다. orderId: {}", orderId);
+                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
+                });
 
         // 리뷰는 “내 주문”에만 달 수 있음(다른 사람 주문 ID로 생성 시도 차단)
         authValidator.validateAccess(
@@ -57,21 +59,23 @@ public class ReviewService {
 
         // 동일 주문으로 이미 리뷰가 있으면 중복 방지
         if (reviewRepository.existsByOrder_Id(orderId)) {
+            log.warn("[REVIEW] 리뷰 생성 실패: 이미 리뷰가 존재하는 주문입니다. orderId: {}", orderId);
             throw new ApplicationException(ReviewErrorCode.REVIEW_CONFLICT);
         }
 
         // 픽업 완료 상태에만 리뷰 작성 가능
         if (order.getStatus() != OrderStatus.COMPLETED) {
+            log.warn("[REVIEW] 리뷰 생성 실패: 완료되지 않은 주문입니다. orderId: {}, status: {}", orderId, order.getStatus());
             throw new ApplicationException(ReviewErrorCode.REVIEW_BAD_REQUEST);
         }
 
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(
                 order,
                 reviewRequestDto.getRating(),
                 reviewRequestDto.getContent()
         );
-        ReviewEntity saved = reviewRepository.save(review);
+        Review saved = reviewRepository.save(review);
 
         // 리뷰 생성 후 영속성 컨텍스트를 DB에 플러시하여 집계 쿼리에 포함되도록 한 후 평균 평점 갱신
         reviewRepository.flush();
@@ -85,11 +89,13 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewResponseDto getReview(UUID reviewId) {
 
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() ->new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
+        Review review = findReviewById(reviewId);
+
         if (review.isDeleted()) {
+            log.warn("[REVIEW] 리뷰 조회 실패: 삭제된 리뷰입니다. reviewId: {}", reviewId);
             throw new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
         }
+
         return new ReviewResponseDto(review);
     }
 
@@ -101,7 +107,7 @@ public class ReviewService {
                 isAsc ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()
         );
 
-        Page<ReviewEntity> reviewList = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(storeId, pageable);
+        Page<Review> reviewList = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(storeId, pageable);
 
         return reviewList.map(ReviewResponseDto::new);
     }
@@ -110,14 +116,11 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDto updateReview(UUID reviewId, ReviewRequestDto request) {
 
-        UUID userId = securityUtils.getCurrentUserId();
-
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
+        Review review = findReviewById(reviewId);
 
         if (review.isDeleted()) {
+            log.warn("[REVIEW] 리뷰 수정 실패: 삭제된 리뷰입니다. reviewId: {}", reviewId);
             throw new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
-
         }
 
         authValidator.validateAccess(
@@ -140,10 +143,7 @@ public class ReviewService {
 
         UUID userId = securityUtils.getCurrentUserId();
 
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
-
-        Role role = securityUtils.getCurrentUserRole();
+        Review review = findReviewById(reviewId);
 
         // @PreAuthorize로 막혀도 서비스에서 역할을 한 번 더 제한(방어)
         authValidator.validateAccess(
@@ -157,6 +157,15 @@ public class ReviewService {
 
         reviewRepository.flush();
         updateStoreAverageRating(review.getStore());
+    }
+
+    private Review findReviewById(UUID reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> {
+                    log.warn("[REVIEW] 리뷰 수정 실패: 리뷰를 찾을 수 없습니다. reviewId: {}", reviewId);
+                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
+                });
+        return review;
     }
 
     private void updateStoreAverageRating(Store store) {

@@ -6,7 +6,7 @@ import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import com.team6.backend.review.domain.exception.ReviewErrorCode;
 import com.team6.backend.review.domain.repository.ReviewRepository;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
@@ -86,14 +86,13 @@ class ReviewServiceTest {
         given(mockUser.getId()).willReturn(userId);
         given(mockStore.getStoreId()).willReturn(storeId);
 
-        given(securityUtils.getCurrentUserId()).willReturn(userId);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockOrder.getStatus()).willReturn(OrderStatus.COMPLETED);
         given(mockOrder.getStore()).willReturn(mockStore);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
 
-        ReviewEntity savedReview = new ReviewEntity();
+        Review savedReview = new Review();
         ReflectionTestUtils.setField(savedReview, "id", reviewId);
         ReflectionTestUtils.setField(savedReview, "user", mockUser);
         ReflectionTestUtils.setField(savedReview, "store", mockStore);
@@ -101,7 +100,7 @@ class ReviewServiceTest {
         ReflectionTestUtils.setField(savedReview, "rating", 5);
         ReflectionTestUtils.setField(savedReview, "content", "맛있어요!");
 
-        given(reviewRepository.save(any(ReviewEntity.class))).willReturn(savedReview);
+        given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
         given(reviewRepository.calculateAverageRatingByStoreId(storeId)).willReturn(5.0);
 
         // when
@@ -109,7 +108,7 @@ class ReviewServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        verify(reviewRepository, times(1)).save(any(ReviewEntity.class));
+        verify(reviewRepository, times(1)).save(any(Review.class));
         verify(reviewRepository, times(1)).flush();
         verify(mockStore, times(1)).updateRating(5.0);
     }
@@ -121,7 +120,6 @@ class ReviewServiceTest {
         UUID anotherUserId = UUID.randomUUID();
         ReviewRequestDto request = createReviewRequestDto(5, "맛있어요!");
 
-        given(securityUtils.getCurrentUserId()).willReturn(anotherUserId); // 다른 사람의 ID
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockUser.getId()).willReturn(userId); // 실제 주문자의 ID
@@ -141,9 +139,11 @@ class ReviewServiceTest {
         // given
         ReviewRequestDto request = createReviewRequestDto(5, "맛있어요!");
 
-        given(securityUtils.getCurrentUserId()).willReturn(userId);
+        // given(securityUtils.getCurrentUserId()).willReturn(userId);
+        lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
-        given(mockOrder.getUser()).willReturn(mockUser);
+        // given(mockOrder.getUser()).willReturn(mockUser);
+        lenient().when(mockOrder.getUser()).thenReturn(mockUser);
         given(mockUser.getId()).willReturn(userId);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
         given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING); // 완료 상태 아님
@@ -158,12 +158,13 @@ class ReviewServiceTest {
     @DisplayName("리뷰 삭제 성공 - 매니저는 본인의 리뷰가 아니어도 삭제할 수 있다.")
     void deleteReview_Manager_Success() {
         // given
-        ReviewEntity review = mock(ReviewEntity.class);
+        Review review = mock(Review.class);
 
         given(mockStore.getStoreId()).willReturn(storeId);
 
         given(securityUtils.getCurrentUserId()).willReturn(UUID.randomUUID()); // 작성자가 아님
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
+        // given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
+        lenient().when(securityUtils.getCurrentUserRole()).thenReturn(Role.MANAGER);
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(review.getStore()).willReturn(mockStore);
         given(review.getUser()).willReturn(mockUser);
@@ -184,11 +185,10 @@ class ReviewServiceTest {
         UUID currentUserId = UUID.randomUUID();
         UUID authorUserId = UUID.randomUUID();
 
-        ReviewEntity review = mock(ReviewEntity.class);
+        Review review = mock(Review.class);
         User author = mock(User.class);
 
         given(securityUtils.getCurrentUserId()).willReturn(currentUserId);
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
 
         given(review.getUser()).willReturn(author);

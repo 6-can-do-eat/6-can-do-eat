@@ -15,7 +15,7 @@ import java.util.UUID;
 @Table(name = "p_review")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
-public class ReviewEntity extends BaseEntity {
+public class Review extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "review_id", updatable = false, nullable = false)
