@@ -6,6 +6,8 @@ import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.order.domain.OrderErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
+import com.team6.backend.payment.domain.PaymentErrorCode;
+import com.team6.backend.payment.domain.PaymentStatus;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.user.domain.entity.User;
 import jakarta.persistence.*;
@@ -13,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -72,4 +75,14 @@ public class Order extends BaseEntity {
     }
 
     public void updateRequestText(String requestText) {this.requestText = requestText;}
+
+
+    public void validateCancelable() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new ApplicationException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        if (getCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_CANCEL_TIMEOUT);
+        }
+    }
 }
