@@ -43,6 +43,13 @@ public class TokenService {
         // Refresh Token Redis 저장
         saveRefreshToken(user.getId(), refreshToken);
 
+        // role Redis 저장 (액세스 토큰 만료 시간과 동일한 TTL)
+        redisService.set(
+                "role:" + user.getId(),
+                user.getRole().name(),
+                Duration.ofMillis(jwtUtil.getAccessTokenExpiration())
+        );
+
         // 응답 반환
         return new LoginResponse(accessToken, refreshToken);
     }

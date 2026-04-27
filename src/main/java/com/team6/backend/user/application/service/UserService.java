@@ -1,7 +1,9 @@
 package com.team6.backend.user.application.service;
 
+import com.team6.backend.auth.application.service.TokenService;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
+import com.team6.backend.global.infrastructure.redis.RedisService;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.user.domain.repository.UserInfoRepository;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
@@ -24,6 +27,8 @@ public class UserService {
 
     private final UserInfoRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
+    private final RedisService redisService;
 
     /**
      * 사용자 상세 조회
@@ -99,6 +104,17 @@ public class UserService {
         targetUser.updateRole(newRole);
         userRepository.saveAndFlush(targetUser);
 
+        // 6. 리프레시 토큰 삭제
+        tokenService.deleteRefreshToken(targetUser.getId());
+
+        /*
+          7. Redis role 캐시 업데이트 (30분 고정)
+          TTL을 액세스 토큰 만료 시간과 통일하려면 JwtUtil 주입이 필요하지만,
+          UserService에 JWT 관련 의존성이 생기기 때문에 JwtFilter와 동일한 30분으로 고정
+          TODO: 공통 상수로 관리 필요
+         */
+        redisService.set("role:" + targetUser.getId(), newRole.name(), Duration.ofMinutes(30));
+
         return UserInfoResponse.from(targetUser);
     }
 
@@ -128,6 +144,12 @@ public class UserService {
 
         // 3. 삭제 처리
         targetUser.markDeleted(currentUser.getUsername());
+
+        // 4. 리프레시 토큰 삭제 (재로그인 불가)
+        tokenService.deleteRefreshToken(targetUser.getId());
+
+        // 5. Redis role 캐시 삭제
+        redisService.delete("role:" + targetUser.getId());
     }
 
     private User getUserByUsername(String username) {
