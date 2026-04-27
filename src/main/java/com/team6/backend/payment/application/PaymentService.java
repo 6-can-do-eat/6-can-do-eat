@@ -39,7 +39,7 @@ public class PaymentService {
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
         log.info("결제 승인 요청: orderId={}, paymentKey={}", orderId, request.getPaymentKey());
 
-        Order order = orderRepository.findById(orderId).orElseThrow(
+        Order order = orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING).orElseThrow(
                 () -> {
                     log.warn("결제 승인 실패/주문 없음: orderId={}", orderId);
                     return new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND);
