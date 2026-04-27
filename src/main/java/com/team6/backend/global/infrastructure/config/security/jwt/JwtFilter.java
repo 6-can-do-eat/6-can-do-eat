@@ -3,7 +3,7 @@ package com.team6.backend.global.infrastructure.config.security.jwt;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.exception.ErrorResponse;
 import com.team6.backend.global.infrastructure.redis.RedisService;
-import com.team6.backend.user.domain.repository.userInfoRepository;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtAuthUtils jwtAuthUtils;
     private final JsonMapper objectMapper;
-    private final userInfoRepository userInfoRepository;
+    private final UserInfoRepository userInfoRepository;
     private final RedisService redisService;
 
     // refresh는 Access Token 검증 스킵
