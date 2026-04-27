@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MenuRepository extends JpaRepository<Menu, UUID> {
@@ -26,4 +27,5 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
     Page<Menu> findByStore_StoreId(UUID storeId, Pageable pageable);
     Page<Menu> findByStore_StoreIdAndNameContainingIgnoreCase(UUID storeId, String name, Pageable pageable);
 
+    Optional<Menu> findByMenuIdAndStore_StoreId(UUID menuId, UUID storeId);
 }

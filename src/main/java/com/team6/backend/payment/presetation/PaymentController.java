@@ -15,6 +15,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -37,18 +38,20 @@ public class PaymentController {
     @GetMapping("/payments")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
     public ResponseEntity<SuccessResponse<Page<PaymentResponse>>> getPayments(
+            @AuthenticationPrincipal UUID userId,
             @PageableDefault(size = 10, sort = "createdBy", direction = Sort.Direction.DESC)
             Pageable pageable) {
         return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayments(
-                securityUtils.getCurrentUserId(),
+                userId,
                 securityUtils.getCurrentUserRole(),
                 pageable)));
     }
 
     @GetMapping("/payments/{paymentId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
-    public ResponseEntity<SuccessResponse<PaymentResponse>> getPayment(@PathVariable UUID paymentId) {
-        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayment(paymentId)));
+    public ResponseEntity<SuccessResponse<PaymentResponse>> getPayment(@PathVariable UUID paymentId,
+                                                                       @AuthenticationPrincipal UUID userId) {
+        return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayment(paymentId, userId, securityUtils.getCurrentUserRole())));
     }
 
     @DeleteMapping("/payments/{paymentId}")

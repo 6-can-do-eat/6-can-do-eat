@@ -3,6 +3,8 @@ package com.team6.backend.order.domain.entity;
 
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.order.domain.OrderErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.user.domain.entity.User;
@@ -61,6 +63,13 @@ public class Order extends BaseEntity {
         return order;
     }
     public void updateTotalPrice(Long totalPrice) {this.totalPrice = totalPrice;}
-    public void updateOrderStatus(OrderStatus orderStatus) {this.status = orderStatus;}
+
+    public void updateOrderStatus(OrderStatus orderStatus) {
+        if (!this.status.canChangeTo(orderStatus)) {
+            throw new ApplicationException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.status = orderStatus;
+    }
+
     public void updateRequestText(String requestText) {this.requestText = requestText;}
 }
