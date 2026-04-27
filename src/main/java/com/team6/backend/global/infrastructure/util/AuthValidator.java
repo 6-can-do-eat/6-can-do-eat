@@ -5,11 +5,13 @@ import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.ErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuthValidator {
@@ -31,6 +33,7 @@ public class AuthValidator {
     ) {
 
         Role userRole = securityUtils.getCurrentUserRole();
+        UUID currentUserId = securityUtils.getCurrentUserId();
 
         // 무조건 허용 권한 목록에 포함되어 있는지 확인
         if (alwaysAllowed != null && alwaysAllowed.contains(userRole)) {
@@ -39,13 +42,14 @@ public class AuthValidator {
 
         // 조건부 허용 권한 목록에 포함되어 있다면 소유권 일치 여부 확인
         if (conditionallyAllowed != null && conditionallyAllowed.contains(userRole)) {
-            UUID currentUserId = securityUtils.getCurrentUserId();
             if (currentUserId.equals(resourceOwnerId)) {
                 return;
             }
         }
 
         // 이외의 모든 경우는 예외 처리
+        log.warn("[AUTH_VALIDATOR] 권한 검증 실패 userId: {}, userRole: {}, resourceOwnerId: {}, errorCode: {}",
+                currentUserId, userRole, resourceOwnerId, errorCode.getCode());
         throw new ApplicationException(errorCode);
     }
 }

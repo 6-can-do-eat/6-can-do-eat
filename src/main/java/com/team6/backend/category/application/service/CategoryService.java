@@ -10,6 +10,7 @@ import com.team6.backend.category.domain.exception.CategoryErrorCode;
 import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
@@ -39,6 +41,7 @@ public class CategoryService {
 
         // 카테고리 이름이 중복인지 확인
         if (categoryRepository.existsByName(request.getName())) {
+            log.warn("[CATEGORY] 카테고리 생성 실패: 중복된 이름. name: {}", request.getName());
             throw new ApplicationException(CategoryErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
@@ -81,6 +84,7 @@ public class CategoryService {
         Category category = findCategoryById(categoryId);
 
         if (!category.getName().equals(request.getName()) && categoryRepository.existsByName(request.getName())) {
+            log.warn("[CATEGORY] 카테고리 수정 실패: 중복된 이름. name: {}", request.getName());
             throw new ApplicationException(CategoryErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
@@ -103,7 +107,10 @@ public class CategoryService {
 
     private Category findCategoryById(UUID categoryId) {
         return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ApplicationException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[CATEGORY] 카테고리를 찾을 수 없습니다. categoryId: {}", categoryId);
+                    return new ApplicationException(CategoryErrorCode.CATEGORY_NOT_FOUND);
+                });
     }
 
 }
