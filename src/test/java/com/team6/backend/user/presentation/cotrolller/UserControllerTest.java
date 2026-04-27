@@ -3,9 +3,11 @@ package com.team6.backend.user.presentation.cotrolller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team6.backend.auth.presentation.dto.UserDetailsImpl;
 import com.team6.backend.global.infrastructure.config.security.jwt.JwtAuthUtils;
+import com.team6.backend.global.infrastructure.redis.RedisService;
 import com.team6.backend.user.application.service.UserService;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import com.team6.backend.user.presentation.dto.request.UserInfoRequest;
 import com.team6.backend.user.presentation.dto.response.UserInfoResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +52,12 @@ class UserControllerTest {
 
     @MockitoBean
     private JwtAuthUtils jwtAuthUtils;
+
+    @MockitoBean
+    private UserInfoRepository userInfoRepository;
+
+    @MockitoBean
+    private RedisService redisService;
 
     @TestConfiguration
     static class TestConfig {

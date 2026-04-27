@@ -1,7 +1,9 @@
 package com.team6.backend.user.application.service;
 
+import com.team6.backend.auth.application.service.TokenService;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
+import com.team6.backend.global.infrastructure.redis.RedisService;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import com.team6.backend.user.domain.repository.UserInfoRepository;
@@ -43,6 +45,12 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private TokenService tokenService;
+
+    @Mock
+    private RedisService redisService;
 
     private User testUser;
     private User masterUser;
@@ -188,6 +196,8 @@ class UserServiceTest {
         assertThat(response.getRole()).isEqualTo(Role.MASTER);
         then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(targetUsername);
         then(userRepository).should(times(1)).saveAndFlush(targetUser);
+        then(tokenService).should(times(1)).deleteRefreshToken(targetUser.getId());
+        then(redisService).should(times(1)).set(anyString(), anyString(), any());
     }
 
     @Test
@@ -269,6 +279,8 @@ class UserServiceTest {
         // Then
         assertThat(testUser.getDeletedAt()).isNotNull();
         then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(username);
+        then(tokenService).should(times(1)).deleteRefreshToken(testUser.getId());
+        then(redisService).should(times(1)).delete(anyString());
     }
 
     @Test
@@ -285,6 +297,8 @@ class UserServiceTest {
         // Then
         assertThat(testUser.getDeletedAt()).isNotNull();
         then(userRepository).should(times(1)).findByUsernameAndDeletedAtIsNull(username);
+        then(tokenService).should(times(1)).deleteRefreshToken(testUser.getId());
+        then(redisService).should(times(1)).delete(anyString());
     }
 
     @Test
