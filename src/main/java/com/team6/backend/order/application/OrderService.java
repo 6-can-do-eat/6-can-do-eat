@@ -164,7 +164,7 @@ public class OrderService {
     public OrderStatusUpdate.Response updateOrderStatus(UUID orderId, UUID userId, Role role, OrderStatusUpdate.Request request) {
         log.info("주문 상태 변경 요청: orderId={}", orderId);
 
-        Order order = orderRepository.findById(orderId).orElseThrow(
+        Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow(
                 () -> {
                     log.warn("주문 상태 변경 실패/주문 없음: orderId={}", orderId);
                     return new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND);
@@ -185,7 +185,7 @@ public class OrderService {
     public OrderCancel.Response cancelOrder(UUID orderId) {
         log.info("주문 취소 요청: orderId={}", orderId);
 
-        Order order = orderRepository.findById(orderId).orElseThrow(
+        Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow(
                 () -> {
                     log.warn("주문 취소 실패/주문 없음: orderId={}", orderId);
                     return new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND);
