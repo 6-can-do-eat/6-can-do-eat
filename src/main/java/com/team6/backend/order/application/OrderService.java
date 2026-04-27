@@ -49,6 +49,14 @@ public class OrderService {
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request, UUID userId) {
         log.info("주문 생성 요청: userId={}", userId);
+        // 멱등성 키로 주문 조회
+        Order existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey()).orElse(null);
+
+        if (existingOrder != null) {
+            List<OrderItem> existingItems = orderItemRepository.findByOrderId(existingOrder.getId());
+            return OrderResponse.from(existingOrder, existingOrder.getUser().getId(), existingItems);
+        }
+
         // 인증된 사용자는 getReferenceById로 참조
         User user = userRepository.getReferenceById(userId);
 
@@ -66,7 +74,7 @@ public class OrderService {
                     return new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
                 });;
 
-        Order order = Order.createOrder(user, store, address, request.getRequestText());
+        Order order = Order.createOrder(request.getIdempotencyKey(), user, store, address, request.getRequestText());
 
         List<OrderItem> orderItems = request.getItemRequests().stream().map(
                 itemRequest -> {

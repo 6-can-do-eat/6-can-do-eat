@@ -26,6 +26,9 @@ public class Order extends BaseEntity {
     @Column(name = "order_id")
     private UUID id;
 
+    @Column(name = "idempotency_key", nullable = false, unique = true, updatable = false)
+    private UUID idempotencyKey;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -55,8 +58,9 @@ public class Order extends BaseEntity {
     private List<OrderItem> orderItems = new ArrayList<>();
      */
 
-    public static Order createOrder(User user, Store store, Address address, String requestText) {
+    public static Order createOrder(UUID idempotencyKey, User user, Store store, Address address, String requestText) {
         Order order = new Order();
+        order.idempotencyKey =  idempotencyKey;
         order.user = user;
         order.store = store;
         order.address = address;

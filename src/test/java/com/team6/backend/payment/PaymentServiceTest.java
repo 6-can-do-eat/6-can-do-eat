@@ -210,7 +210,7 @@ class PaymentServiceTest {
         Store store = mock(Store.class);
         Address address = mock(Address.class);
 
-        Order order = Order.createOrder(user, store, address, "요청사항");
+        Order order = Order.createOrder(UUID.randomUUID(), user, store, address, "요청사항");
         ReflectionTestUtils.setField(order, "id", orderId);
         order.updateTotalPrice(totalPrice);
         return order;
@@ -251,7 +251,7 @@ class PaymentServiceTest {
         Store store = mock(Store.class);
         Address address = mock(Address.class);
 
-        Order order = Order.createOrder(user, store, address, "요청사항");
+        Order order = Order.createOrder(UUID.randomUUID(), user, store, address, "요청사항");
         ReflectionTestUtils.setField(order, "id", orderId);
         order.updateTotalPrice(totalPrice);
         return order;

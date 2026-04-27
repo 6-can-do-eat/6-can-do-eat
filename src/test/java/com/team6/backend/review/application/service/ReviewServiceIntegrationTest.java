@@ -25,6 +25,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
@@ -68,7 +70,7 @@ class ReviewServiceIntegrationTest {
     }
 
     private Order createMockOrder(User user, Store store, Address address) {
-        Order order = Order.createOrder(user, store, address, null);
+        Order order = Order.createOrder(UUID.randomUUID(), user, store, address, null);
         ReflectionTestUtils.setField(order, "orderType", "ONLINE");
         ReflectionTestUtils.setField(order, "status", OrderStatus.COMPLETED);
         return order;

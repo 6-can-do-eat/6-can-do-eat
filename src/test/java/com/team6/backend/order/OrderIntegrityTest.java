@@ -151,6 +151,7 @@ class OrderIntegrityTest {
         OrderFixture fixture = saveOrderFixtureWithoutOrder();
 
         Order order = Order.createOrder(
+                UUID.randomUUID(),
                 userRepository.findById(fixture.customerId()).orElseThrow(),
                 storeRepository.findById(fixture.storeId()).orElseThrow(),
                 addressRepository.findById(fixture.addressId()).orElseThrow(),
@@ -201,6 +202,7 @@ class OrderIntegrityTest {
             OrderItemCreateRequest... itemRequests
     ) {
         OrderCreateRequest request = BeanUtils.instantiateClass(OrderCreateRequest.class);
+        ReflectionTestUtils.setField(request, "idempotencyKey", UUID.randomUUID());
         ReflectionTestUtils.setField(request, "storeId", storeId);
         ReflectionTestUtils.setField(request, "addressId", addressId);
         ReflectionTestUtils.setField(request, "requestText", requestText);

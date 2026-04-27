@@ -159,7 +159,7 @@ class PaymentIntegrityTest {
                 customer
         ));
 
-        Order order = Order.createOrder(customer, store, address, "요청사항");
+        Order order = Order.createOrder(UUID.randomUUID(), customer, store, address, "요청사항");
         order.updateTotalPrice(totalPrice);
         return orderRepository.saveAndFlush(order);
     }

@@ -319,7 +319,7 @@ class OrderServiceTest {
         Address address = createAddress(addressId);
         Order order = createOrder(orderId, user, store, address, "요청사항", 18000L);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
         // when
         OrderCancel.Response response = orderService.cancelOrder(orderId);
@@ -346,7 +346,7 @@ class OrderServiceTest {
         Order order = createOrder(orderId, user, store, address, "request", 18000L);
         order.updateOrderStatus(OrderStatus.COMPLETED);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdForUpdate(orderId)).willReturn(Optional.of(order));
 
         // when & then
         assertThatThrownBy(() -> orderService.cancelOrder(orderId))
@@ -397,7 +397,7 @@ class OrderServiceTest {
             String requestText,
             Long totalPrice
     ) {
-        Order order = Order.createOrder(user, store, address, requestText);
+        Order order = Order.createOrder(UUID.randomUUID(), user, store, address, requestText);
         ReflectionTestUtils.setField(order, "id", orderId);
         ReflectionTestUtils.setField(order, "createdAt", LocalDateTime.now());
         order.updateTotalPrice(totalPrice);
@@ -411,6 +411,7 @@ class OrderServiceTest {
             OrderItemCreateRequest... itemRequests
     ) {
         OrderCreateRequest request = BeanUtils.instantiateClass(OrderCreateRequest.class);
+        ReflectionTestUtils.setField(request, "idempotencyKey", UUID.randomUUID());
         ReflectionTestUtils.setField(request, "storeId", storeId);
         ReflectionTestUtils.setField(request, "addressId", addressId);
         ReflectionTestUtils.setField(request, "requestText", requestText);
