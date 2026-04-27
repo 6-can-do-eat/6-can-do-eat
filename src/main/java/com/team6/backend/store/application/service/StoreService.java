@@ -1,9 +1,11 @@
 package com.team6.backend.store.application.service;
 
 import com.team6.backend.area.domain.entity.Area;
+import com.team6.backend.area.domain.exception.AreaErrorCode;
 import com.team6.backend.area.domain.repository.AreaRepository;
 import com.team6.backend.auth.domain.repository.UserRepository;
 import com.team6.backend.category.domain.entity.Category;
+import com.team6.backend.category.domain.exception.CategoryErrorCode;
 import com.team6.backend.category.domain.repository.CategoryRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
@@ -18,6 +20,7 @@ import com.team6.backend.store.presentation.dto.response.StoreResponse;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StoreService {
@@ -51,11 +55,20 @@ public class StoreService {
         UUID userId = securityUtils.getCurrentUserId();
 
         User owner = userRepository.findById(userId)
-                .orElseThrow(() -> new ApplicationException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게 생성 실패: 사용자를 찾을 수 없습니다. userId: {}", userId);
+                    return new ApplicationException(AuthErrorCode.USER_NOT_FOUND);
+                });
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게 생성 실패: 카테고리를 찾을 수 없습니다. categoryId: {}", request.getCategoryId());
+                    return new ApplicationException(CategoryErrorCode.CATEGORY_NOT_FOUND);
+                });
         Area area = areaRepository.findById(request.getAreaId())
-                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게 생성 실패: 지역을 찾을 수 없습니다. areaId: {}", request.getAreaId());
+                    return new ApplicationException(AreaErrorCode.AREA_NOT_FOUND);
+                });
         Store store = new Store(owner, category, area, request.getName(), request.getAddress());
 
         Store saved = storeRepository.save(store);
@@ -110,9 +123,15 @@ public class StoreService {
         );
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게 수정 실패: 카테고리를 찾을 수 없습니다. categoryId: {}", request.getCategoryId());
+                    return new ApplicationException(CategoryErrorCode.CATEGORY_NOT_FOUND);
+                });
         Area area = areaRepository.findById(request.getAreaId())
-                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게 수정 실패: 지역을 찾을 수 없습니다. areaId: {}", request.getAreaId());
+                    return new ApplicationException(AreaErrorCode.AREA_NOT_FOUND);
+                });
 
         store.update(category, area, request.getName(), request.getAddress());
         return new StoreResponse(store);
@@ -145,7 +164,10 @@ public class StoreService {
 
     public Store findStoreById(UUID storeId) {
         return storeRepository.findById(storeId)
-                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[STORE] 가게를 찾을 수 없습니다. storeId: {}", storeId);
+                    return new ApplicationException(StoreErrorCode.STORE_NOT_FOUND);
+                });
     }
 
 }
