@@ -86,7 +86,6 @@ class ReviewServiceTest {
         given(mockUser.getId()).willReturn(userId);
         given(mockStore.getStoreId()).willReturn(storeId);
 
-        given(securityUtils.getCurrentUserId()).willReturn(userId);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockOrder.getStatus()).willReturn(OrderStatus.COMPLETED);
@@ -121,7 +120,6 @@ class ReviewServiceTest {
         UUID anotherUserId = UUID.randomUUID();
         ReviewRequestDto request = createReviewRequestDto(5, "맛있어요!");
 
-        given(securityUtils.getCurrentUserId()).willReturn(anotherUserId); // 다른 사람의 ID
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockUser.getId()).willReturn(userId); // 실제 주문자의 ID
@@ -141,9 +139,11 @@ class ReviewServiceTest {
         // given
         ReviewRequestDto request = createReviewRequestDto(5, "맛있어요!");
 
-        given(securityUtils.getCurrentUserId()).willReturn(userId);
+        // given(securityUtils.getCurrentUserId()).willReturn(userId);
+        lenient().when(securityUtils.getCurrentUserId()).thenReturn(userId);
         given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
-        given(mockOrder.getUser()).willReturn(mockUser);
+        // given(mockOrder.getUser()).willReturn(mockUser);
+        lenient().when(mockOrder.getUser()).thenReturn(mockUser);
         given(mockUser.getId()).willReturn(userId);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
         given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING); // 완료 상태 아님
@@ -163,7 +163,8 @@ class ReviewServiceTest {
         given(mockStore.getStoreId()).willReturn(storeId);
 
         given(securityUtils.getCurrentUserId()).willReturn(UUID.randomUUID()); // 작성자가 아님
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
+        // given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
+        lenient().when(securityUtils.getCurrentUserRole()).thenReturn(Role.MANAGER);
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(review.getStore()).willReturn(mockStore);
         given(review.getUser()).willReturn(mockUser);
@@ -188,7 +189,6 @@ class ReviewServiceTest {
         User author = mock(User.class);
 
         given(securityUtils.getCurrentUserId()).willReturn(currentUserId);
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
 
         given(review.getUser()).willReturn(author);
