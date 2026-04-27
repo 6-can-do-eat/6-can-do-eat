@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -72,4 +73,14 @@ public class Order extends BaseEntity {
     }
 
     public void updateRequestText(String requestText) {this.requestText = requestText;}
+
+
+    public void validateCancelable() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new ApplicationException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        if (getCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_CANCEL_TIMEOUT);
+        }
+    }
 }

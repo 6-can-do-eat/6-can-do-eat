@@ -9,6 +9,7 @@ import com.team6.backend.global.infrastructure.config.security.util.SecurityUtil
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.menu.domain.entity.Menu;
+import com.team6.backend.menu.domain.exception.MenuErrorCode;
 import com.team6.backend.menu.domain.repository.MenuRepository;
 import com.team6.backend.order.application.OrderService;
 import com.team6.backend.order.domain.OrderErrorCode;
@@ -30,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.BeanUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -137,7 +139,7 @@ class OrderServiceTest {
         // when & then
         assertThatThrownBy(() -> orderService.createOrder(request, userId))
                 .isInstanceOf(ApplicationException.class)
-                .hasMessage(CommonErrorCode.RESOURCE_NOT_FOUND.getMessage());
+                .hasMessage(MenuErrorCode.MENU_NOT_FOUND.getMessage());
 
         verify(orderRepository, never()).save(any(Order.class));
     }
@@ -397,6 +399,7 @@ class OrderServiceTest {
     ) {
         Order order = Order.createOrder(user, store, address, requestText);
         ReflectionTestUtils.setField(order, "id", orderId);
+        ReflectionTestUtils.setField(order, "createdAt", LocalDateTime.now());
         order.updateTotalPrice(totalPrice);
         return order;
     }
