@@ -2,6 +2,7 @@ package com.team6.backend.review.application.service;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.review.domain.exception.ReviewErrorCode;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -33,7 +35,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final SecurityUtils securityUtils;
-
+    private final AuthValidator authValidator;
 
     @Transactional
     public ReviewResponseDto createReview(UUID orderId, ReviewRequestDto reviewRequestDto) {
@@ -46,9 +48,12 @@ public class ReviewService {
                 .orElseThrow(() -> new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         // 리뷰는 “내 주문”에만 달 수 있음(다른 사람 주문 ID로 생성 시도 차단)
-        if (!userId.equals(order.getUser().getId())) {
-            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
-        }
+        authValidator.validateAccess(
+                order.getUser().getId(),
+                null,
+                List.of(Role.CUSTOMER),
+                ReviewErrorCode.REVIEW_FORBIDDEN
+        );
 
         // 동일 주문으로 이미 리뷰가 있으면 중복 방지
         if (reviewRepository.existsByOrder_Id(orderId)) {
@@ -115,9 +120,13 @@ public class ReviewService {
 
         }
 
-        if (!review.getUser().getId().equals(userId)) {
-            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
-        }
+        authValidator.validateAccess(
+                review.getUser().getId(),
+                null,
+                List.of(Role.CUSTOMER),
+                ReviewErrorCode.REVIEW_FORBIDDEN
+        );
+
         review.update(request.getRating(), request.getContent());
 
         reviewRepository.flush();
@@ -137,14 +146,12 @@ public class ReviewService {
         Role role = securityUtils.getCurrentUserRole();
 
         // @PreAuthorize로 막혀도 서비스에서 역할을 한 번 더 제한(방어)
-        if (role != Role.CUSTOMER && role != Role.MANAGER && role != Role.MASTER) {
-            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
-        }
-
-        // 고객은 본인이 작성한 리뷰만
-        if (role == Role.CUSTOMER && !review.getUser().getId().equals(userId)) {
-            throw new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN);
-        }
+        authValidator.validateAccess(
+                review.getUser().getId(),
+                List.of(Role.MANAGER, Role.MASTER),
+                List.of(Role.CUSTOMER), // 고객은 본인이 작성한 리뷰만
+                ReviewErrorCode.REVIEW_FORBIDDEN
+        );
 
         review.delete(String.valueOf(userId));
 
