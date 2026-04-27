@@ -1,9 +1,13 @@
 package com.team6.backend.global.infrastructure.util;
 
+import com.team6.backend.auth.domain.repository.UserRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.exception.AuthErrorCode;
+import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.exception.ErrorCode;
 import com.team6.backend.user.domain.entity.Role;
+import com.team6.backend.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +19,7 @@ import java.util.UUID;
 public class AuthValidator {
 
     private final SecurityUtils securityUtils;
+    private final UserRepository userRepository;
 
     /**
      * 권한 및 소유권 검증 메서드
@@ -31,6 +36,11 @@ public class AuthValidator {
     ) {
 
         Role userRole = securityUtils.getCurrentUserRole();
+
+        // 매 요청 시 DB 권한 재검증 (토큰 내 role과 실제 DB role 비교)
+        UUID userId = securityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new ApplicationException(AuthErrorCode.USER_NOT_FOUND));
+        if (!user.getRole().equals(userRole)) throw new ApplicationException(CommonErrorCode.CONFLICT);
 
         // 무조건 허용 권한 목록에 포함되어 있는지 확인
         if (alwaysAllowed != null && alwaysAllowed.contains(userRole)) {
