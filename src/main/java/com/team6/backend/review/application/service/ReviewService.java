@@ -12,7 +12,7 @@ import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import com.team6.backend.review.domain.repository.ReviewRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -69,13 +69,13 @@ public class ReviewService {
             throw new ApplicationException(ReviewErrorCode.REVIEW_BAD_REQUEST);
         }
 
-        ReviewEntity review = new ReviewEntity();
+        Review review = new Review();
         review.createReview(
                 order,
                 reviewRequestDto.getRating(),
                 reviewRequestDto.getContent()
         );
-        ReviewEntity saved = reviewRepository.save(review);
+        Review saved = reviewRepository.save(review);
 
         // 리뷰 생성 후 영속성 컨텍스트를 DB에 플러시하여 집계 쿼리에 포함되도록 한 후 평균 평점 갱신
         reviewRepository.flush();
@@ -89,11 +89,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewResponseDto getReview(UUID reviewId) {
 
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> {
-                    log.warn("[REVIEW] 리뷰 조회 실패: 리뷰를 찾을 수 없습니다. reviewId: {}", reviewId);
-                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
-                });
+        Review review = findReviewById(reviewId);
 
         if (review.isDeleted()) {
             log.warn("[REVIEW] 리뷰 조회 실패: 삭제된 리뷰입니다. reviewId: {}", reviewId);
@@ -111,7 +107,7 @@ public class ReviewService {
                 isAsc ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending()
         );
 
-        Page<ReviewEntity> reviewList = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(storeId, pageable);
+        Page<Review> reviewList = reviewRepository.findByStore_StoreIdAndDeletedAtIsNull(storeId, pageable);
 
         return reviewList.map(ReviewResponseDto::new);
     }
@@ -120,11 +116,7 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDto updateReview(UUID reviewId, ReviewRequestDto request) {
 
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> {
-                    log.warn("[REVIEW] 리뷰 수정 실패: 리뷰를 찾을 수 없습니다. reviewId: {}", reviewId);
-                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
-                });
+        Review review = findReviewById(reviewId);
 
         if (review.isDeleted()) {
             log.warn("[REVIEW] 리뷰 수정 실패: 삭제된 리뷰입니다. reviewId: {}", reviewId);
@@ -151,13 +143,7 @@ public class ReviewService {
 
         UUID userId = securityUtils.getCurrentUserId();
 
-        ReviewEntity review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> {
-                    log.warn("[REVIEW] 리뷰 삭제 실패: 리뷰를 찾을 수 없습니다. reviewId: {}", reviewId);
-                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
-                });
-
-        Role role = securityUtils.getCurrentUserRole();
+        Review review = findReviewById(reviewId);
 
         // @PreAuthorize로 막혀도 서비스에서 역할을 한 번 더 제한(방어)
         authValidator.validateAccess(
@@ -171,6 +157,15 @@ public class ReviewService {
 
         reviewRepository.flush();
         updateStoreAverageRating(review.getStore());
+    }
+
+    private Review findReviewById(UUID reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> {
+                    log.warn("[REVIEW] 리뷰 수정 실패: 리뷰를 찾을 수 없습니다. reviewId: {}", reviewId);
+                    return new ApplicationException(ReviewErrorCode.REVIEW_NOT_FOUND);
+                });
+        return review;
     }
 
     private void updateStoreAverageRating(Store store) {

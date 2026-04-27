@@ -6,7 +6,7 @@ import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
-import com.team6.backend.review.domain.entity.ReviewEntity;
+import com.team6.backend.review.domain.entity.Review;
 import com.team6.backend.review.domain.exception.ReviewErrorCode;
 import com.team6.backend.review.domain.repository.ReviewRepository;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
@@ -93,7 +93,7 @@ class ReviewServiceTest {
         given(mockOrder.getStore()).willReturn(mockStore);
         given(reviewRepository.existsByOrder_Id(orderId)).willReturn(false);
 
-        ReviewEntity savedReview = new ReviewEntity();
+        Review savedReview = new Review();
         ReflectionTestUtils.setField(savedReview, "id", reviewId);
         ReflectionTestUtils.setField(savedReview, "user", mockUser);
         ReflectionTestUtils.setField(savedReview, "store", mockStore);
@@ -101,7 +101,7 @@ class ReviewServiceTest {
         ReflectionTestUtils.setField(savedReview, "rating", 5);
         ReflectionTestUtils.setField(savedReview, "content", "맛있어요!");
 
-        given(reviewRepository.save(any(ReviewEntity.class))).willReturn(savedReview);
+        given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
         given(reviewRepository.calculateAverageRatingByStoreId(storeId)).willReturn(5.0);
 
         // when
@@ -109,7 +109,7 @@ class ReviewServiceTest {
 
         // then
         assertThat(response).isNotNull();
-        verify(reviewRepository, times(1)).save(any(ReviewEntity.class));
+        verify(reviewRepository, times(1)).save(any(Review.class));
         verify(reviewRepository, times(1)).flush();
         verify(mockStore, times(1)).updateRating(5.0);
     }
@@ -158,7 +158,7 @@ class ReviewServiceTest {
     @DisplayName("리뷰 삭제 성공 - 매니저는 본인의 리뷰가 아니어도 삭제할 수 있다.")
     void deleteReview_Manager_Success() {
         // given
-        ReviewEntity review = mock(ReviewEntity.class);
+        Review review = mock(Review.class);
 
         given(mockStore.getStoreId()).willReturn(storeId);
 
@@ -184,7 +184,7 @@ class ReviewServiceTest {
         UUID currentUserId = UUID.randomUUID();
         UUID authorUserId = UUID.randomUUID();
 
-        ReviewEntity review = mock(ReviewEntity.class);
+        Review review = mock(Review.class);
         User author = mock(User.class);
 
         given(securityUtils.getCurrentUserId()).willReturn(currentUserId);
