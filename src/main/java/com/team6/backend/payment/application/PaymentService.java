@@ -16,6 +16,7 @@ import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -35,15 +37,24 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
+        log.info("결제 승인 요청: orderId={}, paymentKey={}", orderId, request.getPaymentKey());
+
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
+                () -> {
+                    log.warn("결제 승인 실패/주문 없음: orderId={}", orderId);
+                    return new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND);
+                }
         );
         // 결제 금액 일치 여부
         if (!Objects.equals(request.getAmount(), order.getTotalPrice())) {
+            log.warn("결제 승인 실패/금액 불일치: orderId={}, requestAmount={}, orderAmount={}",
+                    orderId, request.getAmount(), order.getTotalPrice());
             throw new ApplicationException(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
         // 중복 paymentKey 체크
         if (paymentRepository.existsByPaymentKey(request.getPaymentKey())) {
+            log.warn("결제 승인 실패 - 중복 결제 키: orderId={}, paymentKey={}",
+                    orderId, request.getPaymentKey());
             throw new ApplicationException(PaymentErrorCode.PAYMENT_KEY_ALREADY_EXISTS);
         }
 
@@ -58,10 +69,13 @@ public class PaymentService {
 
         order.updateOrderStatus(OrderStatus.COMPLETED);
 
+        log.info("결제 승인 완료: paymentId={}, orderId={}", payment.getId(), orderId);
+
         return PaymentResponse.from(payment);
     }
 
     public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {
+        log.info("결제 목록 조회 요청");
         return switch (role) {
             // 유저 본인 결제 내역 조회
             case CUSTOMER -> paymentRepository.findAllByOrder_User_Id(userId, pageable)
@@ -69,25 +83,40 @@ public class PaymentService {
             // 전체 결제 내역 조회
             case MANAGER, MASTER -> paymentRepository.findAll(pageable)
                     .map(PaymentResponse::from);
-            default -> throw new ApplicationException(PaymentErrorCode.PAYMENT_FORBIDDEN);
+            default -> {
+                log.warn("결제 목록 조회 실패/권한 없음: userId={}, role={}", userId, role);
+                throw new ApplicationException(PaymentErrorCode.PAYMENT_FORBIDDEN);
+            }
         };
     }
 
     public PaymentResponse getPayment(UUID paymentId, UUID userId, Role role) {
+        log.info("결제 단건 조회 요청: paymentId={}", paymentId);
+
         Payment payment = paymentRepository.findById(paymentId).orElseThrow(
-                () -> new ApplicationException(PaymentErrorCode.PAYMENT_NOT_FOUND)
+                () -> {
+                    log.warn("결제 단건 조회 실패/결제 없음: paymentId={}", paymentId);
+                    return new ApplicationException(PaymentErrorCode.PAYMENT_NOT_FOUND);
+                }
         );
         if (role == Role.CUSTOMER && !userId.equals(payment.getOrder().getUser().getId())) {
+            log.warn("결제 단건 조회 실패/사용자 권한 위반: paymentId={}, userId={}", paymentId, userId);
             throw new ApplicationException(PaymentErrorCode.PAYMENT_FORBIDDEN);
         }
         return PaymentResponse.from(payment);
     }
 
     public void deletePayment(UUID paymentId, UUID userId) {
+        log.info("결제 삭제 요청: paymentId={}, userId={}", paymentId, userId);
+
         Payment payment = paymentRepository.findById(paymentId).orElseThrow(
-                () -> new ApplicationException(PaymentErrorCode.PAYMENT_NOT_FOUND)
+                () -> {
+                    log.warn("결제 삭제 실패/결제 없음: paymentId={}", paymentId);
+                    return new ApplicationException(PaymentErrorCode.PAYMENT_NOT_FOUND);
+                }
         );
         payment.markDeleted(userId.toString());
+        log.info("결제 삭제 완료: paymentId={}, deletedBy={}", paymentId, userId);
     }
 
     public TossPaymentResponse createCheckout() {
