@@ -49,7 +49,7 @@ class PaymentServiceTest {
         // given
         UUID orderId = UUID.randomUUID();
         Order order = createOrder(orderId, 15000L);
-        PaymentConfirmRequest request = createConfirmRequest("payment-key-1", 15000L);
+        PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 15000L);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
         given(paymentRepository.existsByPaymentKey("payment-key-1")).willReturn(false);
@@ -62,7 +62,7 @@ class PaymentServiceTest {
         assertThat(response.getPaymentKey()).isEqualTo("payment-key-1");
         assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(response.getAmount()).isEqualTo(15000L);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
         verify(paymentRepository).save(any(Payment.class));
     }
@@ -73,7 +73,7 @@ class PaymentServiceTest {
         // given
         UUID orderId = UUID.randomUUID();
         Order order = createOrder(orderId, 15000L);
-        PaymentConfirmRequest request = createConfirmRequest("payment-key-1", 12000L);
+        PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 12000L);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
@@ -82,7 +82,7 @@ class PaymentServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.INVALID_INPUT_VALUE.getMessage());
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         verify(paymentRepository, never()).save(any(Payment.class));
     }
 
@@ -92,7 +92,7 @@ class PaymentServiceTest {
         // given
         UUID orderId = UUID.randomUUID();
         Order order = createOrder(orderId, 15000L);
-        PaymentConfirmRequest request = createConfirmRequest("payment-key-1", 15000L);
+        PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 15000L);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
         given(paymentRepository.existsByPaymentKey("payment-key-1")).willReturn(true);
@@ -102,7 +102,7 @@ class PaymentServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.CONFLICT.getMessage());
 
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         verify(paymentRepository, never()).save(any(Payment.class));
     }
 
@@ -151,10 +151,10 @@ class PaymentServiceTest {
         assertThat(payment.getDeletedBy()).isEqualTo(userId.toString());
     }
 
-    private PaymentConfirmRequest createConfirmRequest(String paymentKey, Long amount) {
+    private PaymentConfirmRequest createConfirmRequest(UUID orderId, String paymentKey, Long amount) {
         PaymentConfirmRequest request = new PaymentConfirmRequest();
+        ReflectionTestUtils.setField(request, "orderId", orderId.toString());
         ReflectionTestUtils.setField(request, "paymentKey", paymentKey);
-        ReflectionTestUtils.setField(request, "paymentType", "CARD");
         ReflectionTestUtils.setField(request, "amount", amount);
         return request;
     }

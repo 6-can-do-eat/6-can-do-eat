@@ -3,6 +3,7 @@ package com.team6.backend.payment.presetation;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.payment.application.PaymentService;
+import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -54,5 +56,36 @@ public class PaymentController {
     public ResponseEntity<SuccessResponse<?>> deletePayment(@PathVariable UUID paymentId) {
         paymentService.deletePayment(paymentId, securityUtils.getCurrentUserId());
         return ResponseEntity.noContent().build();
+    }
+
+    /* ================== Toss PG 연동 결제창 생성  ======================= */
+
+    @PostMapping("/orders/payments/toss-checkout")
+    public ResponseEntity<TossPaymentResponse> createCheckout() {
+        return ResponseEntity.ok(paymentService.createCheckout());
+    }
+
+    @GetMapping("/toss/success")
+    public ResponseEntity<Map<String, String>> tossSuccess(
+            @RequestParam String paymentKey,
+            @RequestParam String orderId,
+            @RequestParam Long amount
+    ) {
+        return ResponseEntity.ok(Map.of(
+                "paymentKey", paymentKey,
+                "orderId", orderId,
+                "amount", amount.toString()
+        ));
+    }
+
+    @GetMapping("/toss/fail")
+    public ResponseEntity<Map<String, String>> tossFail(
+            @RequestParam String code,
+            @RequestParam String message
+    ) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "code", code,
+                "message", message
+        ));
     }
 }

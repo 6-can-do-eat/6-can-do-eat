@@ -11,7 +11,7 @@ public class PaymentConfirmRequest {
     @NotEmpty
     private String paymentKey;
     @NotEmpty
-    private String paymentType;
+    private String orderId;
     @NotNull
     private Long amount;
 }

@@ -40,7 +40,7 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OrderStatus orderStatus = OrderStatus.PENDING;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(nullable = false)
     private Long totalPrice = 0L;
@@ -61,6 +61,6 @@ public class Order extends BaseEntity {
         return order;
     }
     public void updateTotalPrice(Long totalPrice) {this.totalPrice = totalPrice;}
-    public void updateOrderStatus(OrderStatus orderStatus) {this.orderStatus = orderStatus;}
+    public void updateOrderStatus(OrderStatus orderStatus) {this.status = orderStatus;}
     public void updateRequestText(String requestText) {this.requestText = requestText;}
 }

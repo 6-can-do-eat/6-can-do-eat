@@ -8,6 +8,10 @@ import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.payment.domain.Payment;
 import com.team6.backend.payment.domain.PaymentRepository;
 import com.team6.backend.payment.domain.PaymentStatus;
+import com.team6.backend.payment.infrastructure.TossPaymentClient;
+import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmResponse;
+import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
+import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
 import com.team6.backend.user.domain.entity.Role;
@@ -27,6 +31,7 @@ public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final TossPaymentClient tossPaymentClient;
 
     @Transactional
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
@@ -41,6 +46,12 @@ public class PaymentService {
         if (paymentRepository.existsByPaymentKey(request.getPaymentKey())) {
             throw new ApplicationException(CommonErrorCode.CONFLICT);
         }
+
+        /* Toss 결제 연동용
+        TossPaymentConfirmResponse response = tossPaymentClient.confirmPayment(request);
+        Payment payment = Payment.createPayment(order, response.getPaymentKey(), response.getTotalAmount());
+        */
+
         Payment payment = Payment.createPayment(order, request.getPaymentKey(), request.getAmount());
         payment.updatePaymentStatus(PaymentStatus.COMPLETED);
         paymentRepository.save(payment);
@@ -74,5 +85,17 @@ public class PaymentService {
                 () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
         );
         payment.markDeleted(userId.toString());
+    }
+
+    public TossPaymentResponse createCheckout() {
+        TossPaymentRequest request = new TossPaymentRequest(
+                "CARD",
+                1L,
+                "25d0824f-0870-4f60-8b57-825d92ec6726",
+                "음식 주문",
+                "http://localhost:8080/api/v1/toss/success",
+                "http://localhost:8080/api/v1/toss/fail"
+        );
+        return tossPaymentClient.createPayment(request);
     }
 }
