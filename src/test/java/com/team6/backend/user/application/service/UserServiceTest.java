@@ -4,7 +4,7 @@ import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
-import com.team6.backend.user.domain.repository.userInfoRepository;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import com.team6.backend.user.presentation.dto.request.UserInfoRequest;
 import com.team6.backend.user.presentation.dto.response.UserInfoResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ class UserServiceTest {
     private UserService userService;
 
     @Mock
-    private userInfoRepository userRepository;
+    private UserInfoRepository userRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
