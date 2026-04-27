@@ -8,6 +8,7 @@ import com.team6.backend.auth.domain.repository.UserRepository;
 import com.team6.backend.category.domain.entity.Category;
 import com.team6.backend.category.domain.repository.CategoryRepository;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
@@ -54,6 +55,9 @@ class ReviewServiceIntegrationTest {
 
     @MockitoBean
     private SecurityUtils securityUtils;
+
+    @MockitoBean
+    private AuthValidator authValidator;
 
     private User createMockUser(String username, String password, Role role) {
         User user = new User();

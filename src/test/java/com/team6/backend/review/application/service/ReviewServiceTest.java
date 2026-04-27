@@ -2,6 +2,7 @@ package com.team6.backend.review.application.service;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
@@ -45,6 +46,9 @@ class ReviewServiceTest {
 
     @Mock
     private SecurityUtils securityUtils;
+
+    @Mock
+    private AuthValidator authValidator;
 
     private UUID userId;
     private UUID orderId;
@@ -122,6 +126,9 @@ class ReviewServiceTest {
         given(mockOrder.getUser()).willReturn(mockUser);
         given(mockUser.getId()).willReturn(userId); // 실제 주문자의 ID
 
+        doThrow(new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
+
         // when & then
         ApplicationException exception = assertThrows(ApplicationException.class,
                 () -> reviewService.createReview(orderId, request));
@@ -159,6 +166,7 @@ class ReviewServiceTest {
         given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(review.getStore()).willReturn(mockStore);
+        given(review.getUser()).willReturn(mockUser);
 
         // when
         reviewService.deleteReview(reviewId);
@@ -185,6 +193,9 @@ class ReviewServiceTest {
 
         given(review.getUser()).willReturn(author);
         given(author.getId()).willReturn(authorUserId); // 작성자 ID와 현재 사용자 ID가 다름
+
+        doThrow(new ApplicationException(ReviewErrorCode.REVIEW_FORBIDDEN))
+                .when(authValidator).validateAccess(any(), any(), any(), any());
 
         // when & then
         ApplicationException exception = assertThrows(ApplicationException.class,
