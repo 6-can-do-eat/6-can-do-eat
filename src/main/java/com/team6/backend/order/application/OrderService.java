@@ -3,11 +3,11 @@ package com.team6.backend.order.application;
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.address.domain.repository.AddressRepository;
 import com.team6.backend.auth.domain.repository.UserRepository;
-import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.menu.domain.entity.Menu;
 import com.team6.backend.menu.domain.repository.MenuRepository;
+import com.team6.backend.order.domain.OrderErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.entity.OrderItem;
@@ -41,7 +41,6 @@ public class OrderService {
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
     private final AddressRepository addressRepository;
-    private final SecurityUtils securityUtils;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request, UUID userId) {
@@ -52,15 +51,16 @@ public class OrderService {
                 .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // 가게 영업 여부 확인
         validateStoreOrderable(store);
-
-        Address address = addressRepository.findById(request.getAddressId())
+        // 해당 주소가 인증된 사용자의 주소와 동일한지 확인
+        Address address = addressRepository.findByAdIdAndUser_Id(request.getAddressId(), userId)
                 .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));;
 
         Order order = Order.createOrder(user, store, address, request.getRequestText());
 
         List<OrderItem> orderItems = request.getItemRequests().stream().map(
                 itemRequest -> {
-                    Menu menu = menuRepository.findById(itemRequest.getMenuId())
+                    // 모든 메뉴가 같은 가게 인지 여부 확인
+                    Menu menu = menuRepository.findByMenuIdAndStore_StoreId(itemRequest.getMenuId(), store.getStoreId())
                             .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
                     // 메뉴 활성화 여부 확인
                     validateMenuOrderable(menu);
@@ -78,13 +78,12 @@ public class OrderService {
         return OrderResponse.from(order, userId, orderItems);
     }
 
-    public Page<OrderResponse> getOrders(UUID userId, Pageable pageable) {
-        Role role = securityUtils.getCurrentUserRole();
+    public Page<OrderResponse> getOrders(UUID userId, Role role, Pageable pageable) {
         Page<Order> orders = switch (role) {
             case CUSTOMER -> orderRepository.findAllByUserId(userId, pageable);
             case OWNER -> orderRepository.findAllByStore_OwnerId(userId, pageable);
             case MANAGER, MASTER -> orderRepository.findAll(pageable);
-            default -> throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+            default -> throw new ApplicationException(OrderErrorCode.ORDER_FORBIDDEN);
         };
         // Order 하나에 해당하는 List<OrderItem>를 한번에 불러오기 위한 로직
         List<UUID> orderIds = orders.getContent().stream().map(Order::getId).toList();
@@ -99,14 +98,17 @@ public class OrderService {
         ));
     }
 
-    public OrderResponse getOrder(UUID orderId) {
-        Role role = securityUtils.getCurrentUserRole();
+    public OrderResponse getOrder(UUID orderId, UUID userId, Role role) {
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
         );
+        // 사용자의 주문이 맞는지 확인
+        if (role == Role.CUSTOMER && !userId.equals(order.getUser().getId())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_FORBIDDEN);
+        }
         // 가게에 포함되는 주문 일치 여부 확인
-        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getUser().getId())) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        if (role == Role.OWNER && !userId.equals(order.getStore().getOwner().getId())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_FORBIDDEN);
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
@@ -116,52 +118,51 @@ public class OrderService {
     @Transactional
     public OrderUpdate.Response updateOrder(UUID orderId, @Valid OrderUpdate.Request request) {
         // Order 상태 PENDING 여부 확인
-        Order order = orderRepository.findByIdAndOrderStatus(orderId, OrderStatus.PENDING).orElseThrow(
-                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+        Order order = orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING).orElseThrow(
+                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
         );
         order.updateRequestText(request.getRequestText());
         return OrderUpdate.Response.from(orderId, request.getRequestText());
     }
 
     @Transactional
-    public OrderStatusUpdate.Response updateOrderStatus(UUID orderId, OrderStatusUpdate.Request request) {
+    public OrderStatusUpdate.Response updateOrderStatus(UUID orderId, UUID userId, Role role, OrderStatusUpdate.Request request) {
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
         );
 
-        Role role = securityUtils.getCurrentUserRole();
-        if (role == Role.OWNER && !securityUtils.getCurrentUserId().equals(order.getStore().getOwner().getId())) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
+        if (role == Role.OWNER && !userId.equals(order.getStore().getOwner().getId())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_FORBIDDEN);
         }
         order.updateOrderStatus(request.getOrderStatus());
 
-        return OrderStatusUpdate.Response.from(order.getId(), order.getOrderStatus());
+        return OrderStatusUpdate.Response.from(order.getId(), order.getStatus());
     }
 
     @Transactional
     public OrderCancel.Response cancelOrder(UUID orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
         );
         order.updateOrderStatus(OrderStatus.CANCELLED);
-        return OrderCancel.Response.from(orderId, order.getOrderStatus());
+        return OrderCancel.Response.from(orderId, order.getStatus());
     }
 
     @Transactional
-    public void deleteOrder(UUID orderId) {
+    public void deleteOrder(UUID orderId, UUID userId) {
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND)
+                () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
         );
-        order.markDeleted(securityUtils.getCurrentUserId().toString());
+        order.markDeleted(userId.toString());
     }
 
     private void validateStoreOrderable(Store store) {
         if (store.isHidden() || store.isDeleted())
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
+            throw new ApplicationException(OrderErrorCode.STORE_NOT_ORDERABLE);
     }
 
     private void validateMenuOrderable(Menu menu) {
         if (menu.isHidden() || menu.isDeleted())
-            throw new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
+            throw new ApplicationException(OrderErrorCode.MENU_NOT_ORDERABLE);
     }
 }

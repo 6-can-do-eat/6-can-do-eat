@@ -68,4 +68,8 @@ public class Store extends BaseEntity {
     public void hideStore() {
         this.isHidden = !this.isHidden;
     }
+
+    public void updateRating(double averageRating) {
+        this.rating = Math.round(averageRating * 10) / 10.0;
+    }
 }

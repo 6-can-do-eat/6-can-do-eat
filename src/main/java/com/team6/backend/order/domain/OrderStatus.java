@@ -5,5 +5,13 @@ public enum OrderStatus {
     APPROVED,
     REJECTED,
     CANCELLED,
-    COMPLETED
+    COMPLETED;
+
+    public boolean canChangeTo(OrderStatus next) {
+        return switch (this) {
+            case PENDING -> next == APPROVED || next == REJECTED || next == CANCELLED || next == COMPLETED;
+            case APPROVED -> next == CANCELLED || next == COMPLETED;
+            case REJECTED, CANCELLED, COMPLETED -> false;
+        };
+    }
 }

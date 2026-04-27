@@ -30,6 +30,9 @@ public class StoreResponse {
     @Schema(description = "주소", example = "서울시 종로구 광화문로 123")
     private final String address;
 
+    @Schema(description = "평균 평점", example = "4.5")
+    private final double rating;
+
     @Schema(description = "숨김 여부", example = "false")
     private final boolean isHidden;
 
@@ -41,6 +44,7 @@ public class StoreResponse {
         this.categoryName = store.getCategory().getName();
         this.areaName = store.getArea().getName();
         this.address = store.getAddress();
+        this.rating = store.getRating();
         this.isHidden = store.isHidden();
     }
 

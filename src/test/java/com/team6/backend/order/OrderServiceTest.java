@@ -11,6 +11,7 @@ import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.menu.domain.entity.Menu;
 import com.team6.backend.menu.domain.repository.MenuRepository;
 import com.team6.backend.order.application.OrderService;
+import com.team6.backend.order.domain.OrderErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderItemRepository;
@@ -88,9 +89,9 @@ class OrderServiceTest {
 
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(address));
-        given(menuRepository.findById(chickenMenuId)).willReturn(Optional.of(chicken));
-        given(menuRepository.findById(colaMenuId)).willReturn(Optional.of(cola));
+        given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
+        given(menuRepository.findByMenuIdAndStore_StoreId(chickenMenuId, storeId)).willReturn(Optional.of(chicken));
+        given(menuRepository.findByMenuIdAndStore_StoreId(colaMenuId, storeId)).willReturn(Optional.of(cola));
 
         // when
         OrderResponse response = orderService.createOrder(request, userId);
@@ -130,8 +131,40 @@ class OrderServiceTest {
 
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(address));
-        given(menuRepository.findById(menuId)).willReturn(Optional.empty());
+        given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
+        given(menuRepository.findByMenuIdAndStore_StoreId(menuId, storeId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> orderService.createOrder(request, userId))
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage(CommonErrorCode.RESOURCE_NOT_FOUND.getMessage());
+
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("주문 생성 실패 - 주소가 해당 사용자 소유가 아님")
+    void createOrder_fail_whenAddressDoesNotBelongToUser() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        UUID menuId = UUID.randomUUID();
+
+        User user = createUser(userId);
+        Store store = createStore(storeId, ownerId);
+
+        OrderCreateRequest request = createOrderCreateRequest(
+                storeId,
+                addressId,
+                "request",
+                createOrderItemRequest(menuId, 1)
+        );
+
+        given(userRepository.getReferenceById(userId)).willReturn(user);
+        given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+        given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> orderService.createOrder(request, userId))
@@ -158,7 +191,7 @@ class OrderServiceTest {
 
         OrderUpdate.Request request = createUpdateRequest("덜 맵게 해주세요");
 
-        given(orderRepository.findByIdAndOrderStatus(orderId, OrderStatus.PENDING))
+        given(orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING))
                 .willReturn(Optional.of(order));
 
         // when
@@ -188,15 +221,14 @@ class OrderServiceTest {
         OrderStatusUpdate.Request request = createStatusUpdateRequest(OrderStatus.APPROVED);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.MANAGER);
 
         // when
-        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, request);
+        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, userId, Role.MANAGER, request);
 
         // then
         assertThat(response.getOrderId()).isEqualTo(orderId);
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
 
     @Test
@@ -216,12 +248,58 @@ class OrderServiceTest {
         OrderStatusUpdate.Request request = createStatusUpdateRequest(OrderStatus.APPROVED);
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(securityUtils.getCurrentUserRole()).willReturn(Role.OWNER);
-        given(securityUtils.getCurrentUserId()).willReturn(ownerId);
 
-        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, request);
+        OrderStatusUpdate.Response response = orderService.updateOrderStatus(orderId, ownerId, Role.OWNER, request);
 
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.APPROVED);
+    }
+
+    @Test
+    @DisplayName("주문 단건 조회 실패 - 고객이 본인 주문이 아님")
+    void getOrder_fail_whenCustomerIsNotOrderOwner() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        UUID anotherUserId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        User user = createUser(customerId);
+        Store store = createStore(storeId, ownerId);
+        Address address = createAddress(addressId);
+        Order order = createOrder(orderId, user, store, address, "request", 18000L);
+
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.getOrder(orderId, anotherUserId, Role.CUSTOMER))
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage(OrderErrorCode.ORDER_FORBIDDEN.getMessage());
+    }
+
+    @Test
+    @DisplayName("주문 단건 조회 실패 - 사장이 자기 가게 주문이 아님")
+    void getOrder_fail_whenOwnerIsNotStoreOwner() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID anotherOwnerId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        User user = createUser(customerId);
+        Store store = createStore(storeId, ownerId);
+        Address address = createAddress(addressId);
+        Order order = createOrder(orderId, user, store, address, "request", 18000L);
+
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.getOrder(orderId, anotherOwnerId, Role.OWNER))
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage(OrderErrorCode.ORDER_FORBIDDEN.getMessage());
     }
 
     @Test
@@ -247,7 +325,33 @@ class OrderServiceTest {
         // then
         assertThat(response.getOrderId()).isEqualTo(orderId);
         assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
-        assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("주문 취소 실패 - 완료된 주문")
+    void cancelOrder_fail_whenOrderAlreadyCompleted() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        User user = createUser(userId);
+        Store store = createStore(storeId, ownerId);
+        Address address = createAddress(addressId);
+        Order order = createOrder(orderId, user, store, address, "request", 18000L);
+        order.updateOrderStatus(OrderStatus.COMPLETED);
+
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+        // when & then
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage(OrderErrorCode.ORDER_INVALID_STATUS.getMessage());
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
     }
 
     private User createUser(UUID userId) {
