@@ -52,7 +52,7 @@ class PaymentServiceTest {
         Order order = createOrder(orderId, 15000L);
         PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 15000L);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING)).willReturn(Optional.of(order));
         given(paymentRepository.existsByPaymentKey("payment-key-1")).willReturn(false);
 
         // when
@@ -76,7 +76,7 @@ class PaymentServiceTest {
         Order order = createOrder(orderId, 15000L);
         PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 12000L);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING)).willReturn(Optional.of(order));
 
         // when & then
         assertThatThrownBy(() -> paymentService.confirmPayment(orderId, request))
@@ -95,7 +95,7 @@ class PaymentServiceTest {
         Order order = createOrder(orderId, 15000L);
         PaymentConfirmRequest request = createConfirmRequest(orderId, "payment-key-1", 15000L);
 
-        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+        given(orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING)).willReturn(Optional.of(order));
         given(paymentRepository.existsByPaymentKey("payment-key-1")).willReturn(true);
 
         // when & then
