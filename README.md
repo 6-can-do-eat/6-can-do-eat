@@ -1,241 +1,367 @@
-﻿# Six Can Do Eat Backend
 
-백엔드 협업을 위한 공통 규칙 문서입니다.
+<div align="center">
+  <img src="docs/images/logo.png" alt="logo" width="200"/>
 
-아래 내용은 팀이 함께 맞춰갈 패키지 구조, 공통 설계 원칙, 예외 처리 방식, 엔티티 공통 규칙, Git 협업 규칙을 정리한 기준 문서입니다. 초기 세팅 단계에서는 실제 코드와 일부 차이가 있을 수 있으며, 규칙이나 구조가 바뀌면 이 문서도 함께 업데이트합니다.
+  <h1>6CanDoEat (유켄두잇)</h1>
 
-## 패키지 구조
+![개발기간](https://img.shields.io/badge/개발_기간-2026.04.16_~_2026.04.30-orange?style=flat&labelColor=333333)
 
-```text
-src/main/java/com/team6/backend
-│
-├── global
-│   └── infrastructure
-│       ├── config
-│       ├── entity
-│       └── exception
-└── 도메인명
-    ├── application
-    │   └── service
-    ├── domain
-    │   ├── entity
-    │   ├── exception
-    │   └── repository
-    └── presentation
-        ├── controller
-        └── dto
-            ├── request
-            └── response
+<hr />
+  <p>Spring Boot 기반 음식점 배달 주문·결제·리뷰를 처리하는 백엔드 서비스입니다.</p>
+</div>
+
+---
+
+## 목차
+
+- [프로젝트 소개](#프로젝트-소개)
+- [팀원 소개](#팀원-소개)
+- [기술 스택](#기술-스택)
+- [패키지 구조](#패키지-구조)
+- [도메인 정의](#도메인-정의)
+- [ERD 명세서](#erd-명세서)
+- [API 명세서](#api-명세서)
+- [인프라 아키텍처](#인프라-아키텍처)
+- [시작하기](#실행-방법)
+
+---
+
+### 프로젝트 소개
+
+Spring Boot 기반 음식점 배달 플랫폼 백엔드
+
+- JWT 기반 인증/인가 및 역할 기반 권한 관리 (CUSTOMER / OWNER / MANAGER / MASTER)
+- Toss Payments 결제 시스템 연동
+- Gemini AI 기반 메뉴 설명 자동 생성
+- Soft Delete 기반 데이터 관리 전략
+- 주문 상태 흐름 관리 및 5분 이내 취소 정책
+
+---
+
+### 팀원 소개
+
+|                    **박성우 (Leader)**                    |                        **김지민**                        |                         **박준식**                          |                          **서동원**                          |
+|:------------------------------------------------------:|:-----------------------------------------------------:|:--------------------------------------------------------:|:---------------------------------------------------------:|
+| <img src="https://github.com/seongwop.png" width="80"> | <img src="https://github.com/SuJeKim.png" width="80"> | <img src="https://github.com/qkrwns1478.png" width="80"> | <img src="https://github.com/won2dev-lab.png" width="80"> |
+|        [@seongwop](https://github.com/seongwop)        |        [@SuJeKim](https://github.com/SuJeKim)         |       [@qkrwns1478](https://github.com/qkrwns1478)       |      [@won2dev-lab](https://github.com/won2dev-lab)       |
+|                       주문·결제 / AI                       |                       사용자 / 배송지                       |                    가게·메뉴·카테고리 / 리뷰별점                     |                       인증·인가 / 운영지역                        |
+
+---
+
+### 기술 스택
+| 분류       | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Backend  | ![Java](https://img.shields.io/badge/Java_17-ED8B00?style=flat&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.0.5-6DB33F?style=flat&logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=flat&logo=springsecurity&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat&logo=spring&logoColor=white) ![Spring AI](https://img.shields.io/badge/Spring_AI-6DB33F?style=flat&logo=spring&logoColor=white) |
+| Database | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| AI       | ![Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Infra    | ![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)                                                                                                                                                                                                                                                                                                                                       |
+
+---
+
+### 패키지 구조
+
+<details>
+<summary>패키지 구조 보기</summary>
+
+```
+src/main/java
+└── com
+    └── team6
+        └── backend
+            ├── SixCanDoEatApplication.java
+            ├── address
+            │   ├── application
+            │   │   └── service
+            │   │       └── AddressService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Address.java
+            │   │   └── repository
+            │   │       └── AddressRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── AddressController.java
+            │       └── dto
+            │           ├── AddressRequest.java
+            │           └── AddressResponse.java
+            ├── area
+            │   ├── application
+            │   │   └── service
+            │   │       └── AreaService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Area.java
+            │   │   ├── exception
+            │   │   │   └── AreaErrorCode.java
+            │   │   └── repository
+            │   │       └── AreaRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── AreaController.java
+            │       └── dto
+            │           ├── request
+            │           │   ├── AreaCreateRequest.java
+            │           │   └── UpdateAreaRequest.java
+            │           └── response
+            │               └── AreaResponse.java
+            ├── auth
+            │   ├── application
+            │   │   └── service
+            │   │       ├── AuthService.java
+            │   │       ├── TokenService.java
+            │   │       └── UserDetailsServiceImpl.java
+            │   ├── domain
+            │   │   └── repository
+            │   │       └── UserRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── AuthController.java
+            │       └── dto
+            │           ├── UserDetailsImpl.java
+            │           ├── request
+            │           │   ├── LoginRequest.java
+            │           │   └── SignupRequest.java
+            │           └── response
+            │               ├── LoginResponse.java
+            │               └── UserResponse.java
+            ├── category
+            │   ├── application
+            │   │   └── service
+            │   │       └── CategoryService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Category.java
+            │   │   ├── exception
+            │   │   │   └── CategoryErrorCode.java
+            │   │   └── repository
+            │   │       └── CategoryRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── CategoryController.java
+            │       └── dto
+            │           ├── request
+            │           │   └── CategoryRequest.java
+            │           └── response
+            │               └── CategoryResponse.java
+            ├── global
+            │   └── infrastructure
+            │       ├── config
+            │       │   ├── AuditorConfig.java
+            │       │   ├── JpaAuditingConfig.java
+            │       │   ├── RedisConfig.java
+            │       │   ├── SwaggerConfig.java
+            │       │   └── security
+            │       │       ├── config
+            │       │       │   ├── PasswordEncoderConfig.java
+            │       │       │   └── SecurityConfig.java
+            │       │       ├── jwt
+            │       │       │   ├── JwtAuthUtils.java
+            │       │       │   ├── JwtAuthenticationEntryPoint.java
+            │       │       │   ├── JwtFilter.java
+            │       │       │   └── JwtUtil.java
+            │       │       └── util
+            │       │           └── SecurityUtils.java
+            │       ├── entity
+            │       │   └── BaseEntity.java
+            │       ├── exception
+            │       │   ├── ApplicationException.java
+            │       │   ├── AuthErrorCode.java
+            │       │   ├── CommonErrorCode.java
+            │       │   ├── ErrorCode.java
+            │       │   ├── ErrorResponse.java
+            │       │   ├── GlobalExceptionHandler.java
+            │       │   └── TokenErrorCode.java
+            │       ├── redis
+            │       │   └── RedisService.java
+            │       ├── response
+            │       │   ├── CommonSuccessCode.java
+            │       │   ├── SuccessCode.java
+            │       │   └── SuccessResponse.java
+            │       └── util
+            │           └── AuthValidator.java
+            ├── menu
+            │   ├── application
+            │   │   └── service
+            │   │       └── MenuService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Menu.java
+            │   │   ├── exception
+            │   │   │   └── MenuErrorCode.java
+            │   │   └── repository
+            │   │       └── MenuRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── MenuController.java
+            │       └── dto
+            │           ├── request
+            │           │   ├── MenuRequest.java
+            │           │   └── UpdateMenuRequest.java
+            │           └── response
+            │               └── MenuResponse.java
+            ├── order
+            │   ├── application
+            │   │   └── OrderService.java
+            │   ├── domain
+            │   │   ├── OrderErrorCode.java
+            │   │   ├── OrderStatus.java
+            │   │   ├── entity
+            │   │   │   ├── Order.java
+            │   │   │   └── OrderItem.java
+            │   │   └── repository
+            │   │       ├── OrderItemRepository.java
+            │   │       └── OrderRepository.java
+            │   └── presentation
+            │       ├── OrderController.java
+            │       └── dto
+            │           ├── OrderCancel.java
+            │           ├── OrderCreateRequest.java
+            │           ├── OrderItemCreateRequest.java
+            │           ├── OrderItemResponse.java
+            │           ├── OrderResponse.java
+            │           ├── OrderStatusUpdate.java
+            │           └── OrderUpdate.java
+            ├── payment
+            │   ├── application
+            │   │   └── PaymentService.java
+            │   ├── domain
+            │   │   ├── Payment.java
+            │   │   ├── PaymentErrorCode.java
+            │   │   ├── PaymentRepository.java
+            │   │   └── PaymentStatus.java
+            │   ├── infrastructure
+            │   │   ├── TossPaymentClient.java
+            │   │   └── dto
+            │   │       ├── TossPaymentConfirmRequest.java
+            │   │       ├── TossPaymentConfirmResponse.java
+            │   │       ├── TossPaymentRequest.java
+            │   │       └── TossPaymentResponse.java
+            │   └── presentation
+            │       ├── PaymentController.java
+            │       └── dto
+            │           ├── PaymentConfirmRequest.java
+            │           └── PaymentResponse.java
+            ├── review
+            │   ├── application
+            │   │   └── service
+            │   │       └── ReviewService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Review.java
+            │   │   ├── exception
+            │   │   │   └── ReviewErrorCode.java
+            │   │   └── repository
+            │   │       └── ReviewRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── ReviewController.java
+            │       └── dto
+            │           ├── request
+            │           │   └── ReviewRequestDto.java
+            │           └── response
+            │               └── ReviewResponseDto.java
+            ├── store
+            │   ├── application
+            │   │   └── service
+            │   │       └── StoreService.java
+            │   ├── domain
+            │   │   ├── entity
+            │   │   │   └── Store.java
+            │   │   ├── exception
+            │   │   │   └── StoreErrorCode.java
+            │   │   └── repository
+            │   │       └── StoreRepository.java
+            │   └── presentation
+            │       ├── controller
+            │       │   └── StoreController.java
+            │       └── dto
+            │           ├── request
+            │           │   └── StoreRequest.java
+            │           └── response
+            │               └── StoreResponse.java
+            └── user
+                ├── application
+                │   └── service
+                │       └── UserService.java
+                ├── domain
+                │   ├── entity
+                │   │   ├── Role.java
+                │   │   └── User.java
+                │   └── repository
+                │       └── UserInfoRepository.java
+                └── presentation
+                    ├── controller
+                    │   └── UserController.java
+                    └── dto
+                        ├── request
+                        │   └── UserInfoRequest.java
+                        └── response
+                            └── UserInfoResponse.java
 ```
 
-`도메인명`에는 `user`, `auth`, `store`, `order` 같은 도메인 패키지가 들어갑니다.
+</details>
 
-### global 패키지 역할
+---
 
-- `config`: 스프링 전역 설정, 보안 설정, JPA Auditing, QueryDSL 설정
-- `config.security`: 인증/인가 관련 설정과 JWT 처리
-- `entity`: 모든 엔티티가 공통으로 상속하는 베이스 클래스
-- `exception`: 전역 예외 처리와 공통 에러 응답
+### 도메인 정의
 
-### global 작성 규칙
+| 도메인      | 설명                        |
+|:---------|:--------------------------|
+| Auth     | 회원가입 / 로그인 / 로그아웃 / 토큰 갱신 |
+| User     | 사용자 관리                    |
+| Area     | 운영 지역 관리                  |
+| Category | 카테고리 관리                   |
+| Store    | 가게 등록 및 관리                |
+| Menu     | 메뉴 관리                     |
+| Order    | 주문 생성 및 상태 관리             |
+| Review   | 리뷰 및 별점 관리                |
+| Payment  | 결제 관리 (Toss Payments 연동)  |
+| Address  | 배송지 관리                    |
 
-- `global`에는 특정 도메인에 종속된 비즈니스 로직을 넣지 않습니다.
-- 여러 도메인에서 함께 쓰는 코드만 둡니다.
-- 특정 도메인에서만 쓰는 예외, DTO, 서비스는 각 도메인 패키지 내부에 둡니다.
-- 공통 관심사라고 해도 도메인 로직이 섞이면 `global`이 아니라 해당 도메인으로 이동합니다.
+---
 
-## 패키지 역할
+### ERD 명세서
 
-| 패키지 | 역할 |
-| --- | --- |
-| `global` | 모든 도메인에서 공통으로 사용하는 코드 |
-| `application.service` | 서비스 계층 |
-| `domain.entity` | 도메인 엔티티 |
-| `domain.repository` | Repository 인터페이스 |
-| `presentation.controller` | API 엔드포인트 |
-| `presentation.dto.request` | 요청 DTO |
-| `presentation.dto.response` | 응답 DTO |
+![ERD](docs/images/erd.png)
 
-## BaseEntity 규칙
+---
 
-현재 공통 엔티티는 [`BaseEntity`](src/main/java/com/team6/backend/global/infrastructure/entity/BaseEntity.java)를 기준으로 사용합니다.
+### API 명세서
 
-### 포함 필드
+> **공통 사항**
+> - Base URL: `http://{SERVER_URL}/api/v1`
+> - 인증: JWT (`Authorization: Bearer {token}`), 회원가입·로그인 제외
+> - Content-Type: `application/json`
 
-- `createdAt`
-- `createdBy`
-- `updatedAt`
-- `updatedBy`
-- `deletedAt`
-- `deletedBy`
+> Swagger 문서는 배포 후 업데이트 예정
 
-### 사용 규칙
+[<img src="https://img.shields.io/badge/Swagger-85EA2D?style=flat&logo=swagger&logoColor=black" height="25">]()
 
-- 모든 JPA 엔티티는 특별한 이유가 없으면 `BaseEntity`를 상속합니다.
-- 삭제는 기본적으로 `soft delete`를 사용하고 `markDeleted(String deletedBy)`로 처리합니다.
-- 복구가 필요한 경우 `restore()`를 사용합니다.
-- 실제 삭제가 정말 필요한 경우에만 물리 삭제를 고려합니다.
-- 삭제된 데이터 조회 여부는 서비스/리포지토리 레벨에서 명확히 관리합니다.
+---
 
-### Auditing 설정
+### 인프라 아키텍처
 
-- [`JpaAuditingConfig`](src/main/java/com/team6/backend/global/infrastructure/config/JpaAuditingConfig.java)에서 `@EnableJpaAuditing`을 활성화합니다.
-- `createdBy`, `updatedBy`를 자동 채우려면 추후 `AuditorAware<String>` 구현이 필요합니다.
-- 인증 기능이 붙기 전까지는 `createdBy`, `updatedBy` 처리 전략을 팀 내에서 먼저 합의합니다.
+<details>
+<summary>CI Flow</summary>
 
-## 예외 처리 규칙
+![CI 플로우](docs/images/ci-flow.png)
 
-예외 처리는 전역으로 모아 관리합니다.
+</details>
 
-권장 구조:
+<details>
+<summary>CD Flow</summary>
 
-```text
-global/infrastructure/exception
-├── GlobalExceptionHandler.java
-├── BusinessException.java
-├── ErrorCode.java
-└── ErrorResponse.java
+![CD 플로우](docs/images/cd-flow.png)
+
+</details>
+
+---
+
+### 실행 방법
+
+#### 로컬 실행
+
+```bash
+./gradlew build
+./gradlew bootRun
 ```
-
-### 기본 원칙
-
-- 서비스 계층에서 비즈니스 예외를 던집니다.
-- 컨트롤러에서 `try-catch`로 비즈니스 예외를 직접 처리하지 않습니다.
-- 공통 예외 응답은 `GlobalExceptionHandler`에서 내려줍니다.
-- 예외 메시지는 사용자에게 보여줄 메시지와 로그용 메시지를 구분할 수 있도록 설계합니다.
-- 내부 구현 상세나 민감 정보는 응답에 포함하지 않습니다.
-
-### 에러 코드 규칙
-
-- 형식: `DOMAIN_REASON`
-- 예시:
-  - `COMMON_INVALID_INPUT`
-  - `AUTH_UNAUTHORIZED`
-  - `AUTH_INVALID_TOKEN`
-  - `USER_NOT_FOUND`
-  - `STORE_NOT_FOUND`
-  - `ORDER_FORBIDDEN`
-
-### 권장 에러 응답 형식
-
-```json
-{
-  "status": 404,
-  "code": "USER_NOT_FOUND",
-  "message": "사용자를 찾을 수 없습니다.",
-  "timestamp": "2026-04-17T15:00:00"
-}
-```
-
-### 권장 처리 흐름
-
-1. 서비스에서 `BusinessException(ErrorCode.USER_NOT_FOUND)` 발생
-2. `GlobalExceptionHandler`가 예외를 캐치
-3. HTTP 상태 코드와 표준 에러 응답 바디 반환
-
-## DTO 규칙
-
-- 요청 DTO와 응답 DTO는 반드시 분리합니다.
-- 요청 DTO는 `presentation.dto.request`
-- 응답 DTO는 `presentation.dto.response`
-- 엔티티를 그대로 외부에 노출하지 않습니다.
-- 컨트롤러는 DTO를 받고 DTO를 반환합니다.
-
-## Git 협업 규칙
-
-### 브랜치 전략
-
-- `main`: 최종 검증이 끝난 안정 브랜치
-- `dev`: 기능 개발이 먼저 모이는 통합 브랜치
-- `feature/*`: 기능 개발 브랜치
-- `fix/*`: 버그 수정
-- `refactor/*`: 리팩토링
-- `docs/*`: 문서 수정
-- `chore/*`: 설정, 빌드, 기타 작업
-- `hotfix/*`: 운영 중 긴급 수정 브랜치
-
-브랜치 용도는 아래 기준으로 구분합니다.
-
-- `main`: 배포 가능하거나 최종 기준이 되는 코드만 반영합니다.
-- `dev`: 팀원들의 기능 브랜치를 먼저 합치고 테스트하는 기본 브랜치입니다.
-- `feature/*`: 새로운 기능 작업 시 `dev`에서 분기해서 사용합니다.
-- `hotfix/*`: 운영 이슈를 빠르게 수정해야 할 때 `main`에서 분기해서 사용합니다.
-
-예시:
-
-- `main`
-- `dev`
-- `feature/user-signup`
-- `feature/store-api`
-- `fix/jwt-filter`
-- `docs/readme-rules`
-
-### 작업 흐름
-
-1. `dev` 최신 내용 pull
-2. `feature/*` 브랜치 생성
-3. 작업 후 commit
-4. 원격 브랜치 push
-5. GitHub에서 `feature/* -> dev` Pull Request 생성
-6. 리뷰와 테스트 확인 후 `dev`에 merge
-7. 배포 또는 최종 반영 시점에 `dev -> main` Pull Request 생성
-8. 최종 확인 후 `main`에 merge
-
-### 커밋 메시지 규칙
-
-- `feat: add user signup API`
-- `fix: resolve JWT token parsing issue`
-- `refactor: separate auth service responsibilities`
-- `docs: add backend package rules`
-- `chore: initialize project`
-
-가능하면 한 커밋에는 하나의 의미 있는 변경만 담습니다.
-
-### Pull Request 규칙
-
-- PR은 가능한 한 작은 단위로 올립니다.
-- PR 제목만 보고 어떤 작업인지 알 수 있게 작성합니다.
-- 리뷰 반영은 같은 브랜치에 추가 커밋 후 다시 push 합니다.
-- 기능 개발은 `feature/* -> dev` 흐름을 기본으로 합니다.
-- 충분한 테스트와 검증이 끝난 뒤 `dev -> main`으로 최종 반영합니다.
-- 승인 없이 `dev`에 직접 push 하지 않습니다.
-- 승인 없이 `main`에 직접 push 하지 않습니다.
-
-#### Merge 규칙
-
-1. 리뷰 및 승인 (Review & Approval)
-
-    - **최소 인원:** **2명 이상의 승인(Approve)**이 필수입니다.
-    - **리뷰 방식:**
-        - 코드 확인 후 궁금한 점이나 수정이 필요한 부분은 코멘트를 남깁니다.
-        - 특별한 의견이 없거나 수정을 확인했다면 **👍**과 함께 **`Approve`*를 누릅니다.
-
-2. CI 빌드 테스트 (Continuous Integration)
-
-    - **자동 검증:** PR이 생성되면 자동으로 **빌드 및 테스트**가 실행됩니다.
-    - **실패 시:** 빌드가 실패하면 머지 버튼이 비활성화되며, 실패 원인에 대한 메시지를 확인 후 코드를 수정해야 합니다.
-
-3. 코드 수정 및 리뷰 초기화
-
-    - **충돌/수정 발생 시:** 충돌을 해결하거나 리뷰 반영을 위해 코드를 새로 푸시(Push)할 경우:
-        - **기존에 받은 모든 리뷰 승인은 자동 삭제**됩니다.
-        - 변경된 코드에 대해 **다시 2명 이상의 승인**을 받아야 합니다.
-
-4. 머지 프로세스 (Merge Process)
-
-    - **활성화 조건:** `리뷰 승인 2명` + `CI 빌드 통과`가 모두 완료되어야 합니다.
-    - **최종 머지:** 모든 조건 충족 시 **레포지토리 Owner**가 최종적으로 내용을 확인한 후 Merge를 수행합니다.
-
-5. 머지 후 필수 작업 (Post-Merge) ‼️중요‼️
-
-머지가 완료된 직후, 각 팀원은 본인의 작업 환경을 최신화해야 합니다.
-
-    1. **GitHub 웹:** 본인의 Fork 레포지토리에서 **`Sync fork`** 클릭
-    2. **로컬 환경:** `git pull upstream main` (또는 지정 브랜치) 실행
-    3. **확인:** 최신 코드를 반영한 후 다음 기능을 개발하기 시작합니다.
-
-## 기타 규칙
-
-- Git은 빈 폴더를 추적하지 않으므로 필요한 경우 `.gitkeep` 파일을 사용합니다.
-- 구조를 먼저 잡기 위한 빈 패키지는 `.gitkeep`으로 유지할 수 있습니다.
-- 공통 규칙이 바뀌면 코드만 수정하지 말고 README도 함께 수정합니다.
