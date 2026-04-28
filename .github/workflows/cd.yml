@@ -7,11 +7,11 @@ on:
       - main  # 배포를 원하는 브랜치로 설정
 
 env:
-  PROJECT_ID: project-8503b316-59e9-449a-956
-  REGION: asia-northeast3
-  REPOSITORY: docker-6candoit
-  SERVICE_NAME: 6-can-do-it
-  IMAGE_NAME: six-can-do-eat
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
+  REPOSITORY: ${{ secrets.GCP_REPOSITORY }}
+  SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
+  IMAGE_NAME: ${{ secrets.GCP_IMAGE_NAME }}
 
 jobs:
   deploy:
