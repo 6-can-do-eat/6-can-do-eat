@@ -42,7 +42,7 @@ public class Address extends BaseEntity {
     public Address(AddressRequest request, User user) {
         this.address = request.getAddress();
         this.detail = request.getDetail();
-        this.isDefault = false;
+        this.isDefault = request.isDefault();
         this.user = user;
         this.alias = request.getAlias();
     }

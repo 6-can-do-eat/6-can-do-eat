@@ -16,8 +16,9 @@ public class AddressRequest {
 
     private String detail;
 
-    // TODO: JSON 필드명 불일치
-    @JsonProperty("isDefault")
+    // JSON 필드명 불일치
+    // 변수명은 isDefault로 유지하되, JSON의 "default" 키를 매핑
+    @JsonProperty("default")
     private boolean isDefault;
 
     private String alias;
