@@ -1,0 +1,91 @@
+name: Deploy to Google Cloud Run
+
+# main 브랜치에 push/merge 완료되는 순간 자동 배포
+on:
+  push:
+    branches:
+      - main  # 배포를 원하는 브랜치로 설정
+
+env:
+  PROJECT_ID: project-8503b316-59e9-449a-956
+  REGION: asia-northeast3
+  REPOSITORY: docker-6candoit
+  SERVICE_NAME: 6-can-do-it
+  IMAGE_NAME: six-can-do-eat
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Java 설정 (이미지 빌드 전 빌드 아티팩트 생성을 위해 필요할 수 있음)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # 2. 프로젝트 빌드 (테스트 제외하고 jar 파일 생성)
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      # 3. Google Cloud 인증
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      # 4. Docker 인증 설정
+      - name: Docker Auth
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # 5. Docker 이미지 빌드 및 푸시
+      - name: Build and Push Image
+        run: |
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+
+      # 6. Cloud Run 배포 (모든 Secrets 주입)
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "DB_URL=${{ secrets.DB_URL }},\
+          DB_USERNAME=${{ secrets.DB_USERNAME }},\
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }},\
+          REDIS_HOST=${{ secrets.REDIS_HOST }},\
+          REDIS_PORT=${{ secrets.REDIS_PORT }},\
+          TOSS_SECRET_KEY=${{ secrets.TOSS_SECRET_KEY }},\
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},\
+          SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }},\
+          SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }}"
+
+      # 7. 배포 성공 알림 (Slack)
+      - name: Slack Notification on Success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }} # Webhook URL을 사용하거나 아래처럼 Token 방식 사용 가능
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_MESSAGE: "🚀 배포 성공! 서비스가 정상적으로 업데이트되었습니다."
+          SLACK_TITLE: "Cloud Run 배포 완료"
+
+      # 8. 배포 실패 시 알림 (Slack)
+      - name: Slack Notification on Failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_MESSAGE: "⚠️ 배포 실패! 이전 리비전이 유지됩니다. 로그를 확인하세요."
+          SLACK_TITLE: "Cloud Run 배포 실패"
