@@ -1,4 +1,4 @@
-package com.team6.backend.address.presentation.controlller;
+package com.team6.backend.address.presentation.controller;
 
 import com.team6.backend.address.application.service.AddressService;
 import com.team6.backend.address.presentation.dto.AddressRequest;

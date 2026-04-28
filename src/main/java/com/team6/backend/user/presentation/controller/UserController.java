@@ -1,4 +1,4 @@
-package com.team6.backend.user.presentation.controlller;
+package com.team6.backend.user.presentation.controller;
 
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
