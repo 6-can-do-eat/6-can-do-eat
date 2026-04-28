@@ -37,12 +37,13 @@ public class OrderController {
             @AuthenticationPrincipal UUID userId,
             @PageableDefault(size = 10, sort = "createdBy", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrders(userId, pageable)));
+        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrders(userId, securityUtils.getCurrentUserRole(), pageable)));
     }
 
     @GetMapping("/orders/{orderId}")
-    public ResponseEntity<SuccessResponse<OrderResponse>> getOrder(@PathVariable UUID orderId) {
-        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrder(orderId)));
+    public ResponseEntity<SuccessResponse<OrderResponse>> getOrder(@PathVariable UUID orderId,
+                                                                   @AuthenticationPrincipal UUID userId) {
+        return ResponseEntity.ok(SuccessResponse.ok(orderService.getOrder(orderId, userId, securityUtils.getCurrentUserRole())));
     }
 
     @PutMapping("/orders/{orderId}")
@@ -56,10 +57,11 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     public ResponseEntity<SuccessResponse<OrderStatusUpdate.Response>> updateOrderStatus(
             @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId,
             @RequestBody @Valid OrderStatusUpdate.Request request
     ) {
         return ResponseEntity.ok(
-                SuccessResponse.ok(orderService.updateOrderStatus(orderId, request))
+                SuccessResponse.ok(orderService.updateOrderStatus(orderId, userId, securityUtils.getCurrentUserRole(), request))
         );
     }
 
@@ -75,8 +77,8 @@ public class OrderController {
 
     @DeleteMapping("/orders/{orderId}")
     @PreAuthorize("hasRole('MASTER')")
-    public ResponseEntity<Void> deleteOrder(@PathVariable UUID orderId) {
-        orderService.deleteOrder(orderId);
+    public ResponseEntity<Void> deleteOrder(@PathVariable UUID orderId, @AuthenticationPrincipal UUID userId) {
+        orderService.deleteOrder(orderId, userId);
         return ResponseEntity.noContent().build();
     }
 }

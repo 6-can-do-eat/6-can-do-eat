@@ -14,6 +14,7 @@ import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.exception.StoreErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MenuService {
@@ -118,8 +120,8 @@ public class MenuService {
         Store store = menu.getStore();
         authValidator.validateAccess(
                 store.getOwner().getId(),
-                List.of(Role.MASTER), // 무조건 허용
-                List.of(Role.OWNER), // 조건부 허용
+                List.of(Role.MASTER),
+                List.of(Role.OWNER),
                 MenuErrorCode.MENU_FORBIDDEN
         );
         menu.markDeleted(securityUtils.getCurrentUserId().toString());
@@ -141,7 +143,10 @@ public class MenuService {
 
     private Menu findMenuById(UUID menuId) {
         return menuRepository.findById(menuId)
-                .orElseThrow(() -> new ApplicationException(MenuErrorCode.MENU_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("[MENU] 메뉴를 찾을 수 없습니다. menuId: {}", menuId);
+                    return new ApplicationException(MenuErrorCode.MENU_NOT_FOUND);
+                });
     }
 
 }

@@ -4,7 +4,7 @@ package com.team6.backend.auth.application.service;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.user.domain.entity.User;
-import com.team6.backend.user.domain.repository.userInfoRepository;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import com.team6.backend.auth.presentation.dto.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService {
     // 1.  @AuthenticationPrincipal addressController에서 넘겨줌.
 
-    private final userInfoRepository userInfoRepository;
+    private final UserInfoRepository userInfoRepository;
 
 
     @Override

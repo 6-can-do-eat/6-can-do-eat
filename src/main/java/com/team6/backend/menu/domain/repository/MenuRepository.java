@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MenuRepository extends JpaRepository<Menu, UUID> {
@@ -23,7 +24,12 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
             Pageable pageable
     );
 
+    @Query("SELECT m FROM Menu m JOIN m.store s WHERE s.storeId = :storeId")
     Page<Menu> findByStore_StoreId(UUID storeId, Pageable pageable);
+
+    @Query("SELECT m FROM Menu m JOIN m.store s WHERE s.storeId = :storeId AND LOWER(m.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     Page<Menu> findByStore_StoreIdAndNameContainingIgnoreCase(UUID storeId, String name, Pageable pageable);
 
+    @Query("SELECT m FROM Menu m JOIN m.store s WHERE m.menuId = :menuId AND s.storeId = :storeId")
+    Optional<Menu> findByMenuIdAndStore_StoreId(UUID menuId, UUID storeId);
 }

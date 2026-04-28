@@ -3,6 +3,8 @@ package com.team6.backend.order.domain.entity;
 
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
+import com.team6.backend.global.infrastructure.exception.ApplicationException;
+import com.team6.backend.order.domain.OrderErrorCode;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.user.domain.entity.User;
@@ -11,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -40,7 +43,7 @@ public class Order extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private OrderStatus orderStatus = OrderStatus.PENDING;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(nullable = false)
     private Long totalPrice = 0L;
@@ -61,6 +64,23 @@ public class Order extends BaseEntity {
         return order;
     }
     public void updateTotalPrice(Long totalPrice) {this.totalPrice = totalPrice;}
-    public void updateOrderStatus(OrderStatus orderStatus) {this.orderStatus = orderStatus;}
+
+    public void updateOrderStatus(OrderStatus orderStatus) {
+        if (!this.status.canChangeTo(orderStatus)) {
+            throw new ApplicationException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        this.status = orderStatus;
+    }
+
     public void updateRequestText(String requestText) {this.requestText = requestText;}
+
+
+    public void validateCancelable() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new ApplicationException(OrderErrorCode.ORDER_INVALID_STATUS);
+        }
+        if (getCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            throw new ApplicationException(OrderErrorCode.ORDER_CANCEL_TIMEOUT);
+        }
+    }
 }

@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-    Optional<Order> findByIdAndOrderStatus(UUID orderId, OrderStatus orderStatus);
+    Optional<Order> findByIdAndStatus(UUID orderId, OrderStatus status);
     Page<Order> findAllByUserId(UUID userId, Pageable pageable);
     Page<Order> findAllByStore_OwnerId(UUID storeOwnerId, Pageable pageable);
 }
