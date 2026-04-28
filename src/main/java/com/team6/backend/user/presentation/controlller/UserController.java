@@ -1,6 +1,5 @@
-package com.team6.backend.user.presentation.cotrolller;
+package com.team6.backend.user.presentation.controlller;
 
-import com.team6.backend.auth.presentation.dto.UserDetailsImpl;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.user.application.service.UserService;
@@ -10,8 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,10 +23,10 @@ public class UserController {
     /**
      * 사용자 상세 조회
      */
-    @GetMapping("/{username}")
+    @GetMapping("/{usernId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SuccessResponse<UserInfoResponse>> getUserDetail(@PathVariable String username) {
-        UserInfoResponse response = userService.getUserDetail(username);
+    public ResponseEntity<SuccessResponse<UserInfoResponse>> getUserDetail(@PathVariable UUID usernId) {
+        UserInfoResponse response = userService.getUserDetail(usernId);
         return ResponseEntity.ok(SuccessResponse.ok(response));
     }
 
@@ -49,41 +49,36 @@ public class UserController {
     /**
      * 사용자 정보 수정 (닉네임, 비밀번호)
      */
-    @PutMapping("/{username}")
+    @PutMapping("/{usernId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SuccessResponse<UserInfoResponse>> updateUser(
-            @PathVariable String username,
-            @RequestBody UserInfoRequest request,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @PathVariable UUID usernId,
+            @RequestBody UserInfoRequest request
     ) {
-        UserInfoResponse response = userService.updateUser(username, request, userDetails.getUser());
+        UserInfoResponse response = userService.updateUser(usernId, request);
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, "정보 수정이 완료되었습니다.", response));
     }
 
     /**
      * 사용자 권한 변경
      */
-    @PatchMapping("/{username}/role")
+    @PatchMapping("/{usernId}/role")
     @PreAuthorize("hasRole('MASTER')")
     public ResponseEntity<SuccessResponse<UserInfoResponse>> updateUserRole(
-            @PathVariable String username,
-            @RequestBody UserInfoRequest request,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @PathVariable UUID usernId,
+            @RequestBody UserInfoRequest request
     ) {
-        UserInfoResponse response = userService.updateUserRole(username, request.getRole(), userDetails.getUser());
+        UserInfoResponse response = userService.updateUserRole(usernId, request.getRole());
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, "권한 변경이 완료되었습니다.", response));
     }
 
     /**
      * 사용자 삭제 (소프트)
      */
-    @DeleteMapping("/{username}")
+    @DeleteMapping("/{usernId}")
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
-    public ResponseEntity<SuccessResponse<Void>> deleteUser(
-            @PathVariable String username,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
-    ) {
-        userService.deleteUser(username, userDetails.getUser());
+    public ResponseEntity<SuccessResponse<Void>> deleteUser(@PathVariable UUID usernId) {
+        userService.deleteUser(usernId);
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, "사용자 삭제가 완료되었습니다.", null));
     }
 }

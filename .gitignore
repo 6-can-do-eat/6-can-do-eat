@@ -37,3 +37,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Docker & Database ###
+postgres_data/

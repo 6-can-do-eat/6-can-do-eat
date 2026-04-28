@@ -5,10 +5,9 @@ import com.team6.backend.address.domain.repository.AddressRepository;
 import com.team6.backend.address.presentation.dto.AddressRequest;
 import com.team6.backend.address.presentation.dto.AddressResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
-import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
+import com.team6.backend.user.domain.repository.UserInfoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,16 +22,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AddressServiceTest {
 
     @Mock
     private AddressRepository addressRepository;
+    @Mock
+    private UserInfoRepository userInfoRepository;
     @Mock
     private SecurityUtils securityUtils;
 
@@ -65,10 +64,12 @@ class AddressServiceTest {
         // given
         AddressRequest request = new AddressRequest("서울시 강남구", "101호", false, "집");
         given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
+        given(securityUtils.getCurrentUserId()).willReturn(userId);
+        given(userInfoRepository.getReferenceById(userId)).willReturn(user);
         given(addressRepository.save(any(Address.class))).willReturn(address);
 
         // when
-        AddressResponse response = addressService.addAddress(request, user);
+        AddressResponse response = addressService.addAddress(request);
 
         // then
         assertThat(response).isNotNull();
@@ -81,10 +82,11 @@ class AddressServiceTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Address> addressPage = new PageImpl<>(Collections.singletonList(address));
         given(securityUtils.getCurrentUserRole()).willReturn(Role.CUSTOMER);
+        given(securityUtils.getCurrentUserId()).willReturn(userId);
         given(addressRepository.findByUserId(userId, pageable)).willReturn(addressPage);
 
         // when
-        Page<AddressResponse> result = addressService.getAddress(user, null, 0, 10, "createdAt", false);
+        Page<AddressResponse> result = addressService.getAddress(userId, null, 0, 10, "createdAt", false);
 
         // then
         assertThat(result.getContent()).hasSize(1);

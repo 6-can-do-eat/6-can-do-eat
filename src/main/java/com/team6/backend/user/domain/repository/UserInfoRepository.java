@@ -21,4 +21,7 @@ public interface UserInfoRepository extends JpaRepository<User, UUID> {
             String username, String nickname, Pageable pageable);
 
     Optional<User> findByUsername(String username);
+
+    // ID로 상세 조회 (삭제 안 된 사람만)
+    Optional<User> findByIdAndDeletedAtIsNull(UUID id);
 }
