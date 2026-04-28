@@ -97,45 +97,91 @@ class PaymentIntegrityTest {
     }
 
     @Test
-    @DisplayName("멱등성 요구사항 - 같은 결제 승인 요청이 동시에 들어와도 모두 같은 결제를 반환해야 한다")
+    @DisplayName("동시멱등성 요구사항 - 같은 결제 승인 요청이 동시에 들어와도 모두 같은 결제를 반환해야 한다")
     void confirmPayment_shouldReturnSamePayment_whenSameRequestArrivesConcurrently() throws Exception {
         Order order = savePendingOrder(15_000L);
         String paymentKey = "payment-key-" + UUID.randomUUID();
         List<PaymentResponse> responses = new CopyOnWriteArrayList<>();
+        List<String> outcomes = new CopyOnWriteArrayList<>();
 
         List<Throwable> failures = runConcurrently(10, index -> {
             PaymentConfirmRequest request = paymentRequest(order.getId(), paymentKey, 15_000L);
-            responses.add(paymentService.confirmPayment(order.getId(), request));
+
+            try {
+                PaymentResponse response = paymentService.confirmPayment(order.getId(), request);
+                responses.add(response);
+                outcomes.add("success: index=" + index
+                        + ", paymentKey=" + paymentKey
+                        + ", paymentId=" + response.getPaymentId());
+            } catch (Exception e) {
+                outcomes.add("fail: index=" + index
+                        + ", paymentKey=" + paymentKey
+                        + ", exception=" + e.getClass().getSimpleName()
+                        + ", message=" + e.getMessage());
+                throw e;
+            }
         });
 
-        assertThat(failures).isEmpty();
-        assertThat(responses).hasSize(10);
+        String outcomeSummary = summarizeOutcomes(outcomes);
+        System.out.println("same payment key race outcomes: " + outcomeSummary);
+
+        assertThat(failures)
+                .as("race outcomes: %s", outcomeSummary)
+                .isEmpty();
         assertThat(responses)
+                .as("race outcomes: %s", outcomeSummary)
+                .hasSize(10);
+        assertThat(responses)
+                .as("race outcomes: %s", outcomeSummary)
                 .extracting(PaymentResponse::getPaymentId)
                 .containsOnly(responses.get(0).getPaymentId());
-        assertThat(paymentCountByOrderId(order.getId())).isEqualTo(1L);
+        assertThat(paymentCountByOrderId(order.getId()))
+                .as("race outcomes: %s", outcomeSummary)
+                .isEqualTo(1L);
     }
 
     @Test
     @DisplayName("동시성 요구사항 - 같은 주문에 서로 다른 결제 키가 동시에 들어와도 결제는 하나만 성공해야 한다")
     void confirmPayment_shouldAllowOnlyOnePayment_whenDifferentPaymentKeysRaceForSameOrder() throws Exception {
         Order order = savePendingOrder(15_000L);
+        List<String> outcomes = new CopyOnWriteArrayList<>();
 
         List<Throwable> failures = runConcurrently(10, index -> {
+            String paymentKey = "payment-key-" + index + "-" + UUID.randomUUID();
             PaymentConfirmRequest request = paymentRequest(
                     order.getId(),
-                    "payment-key-" + index + "-" + UUID.randomUUID(),
+                    paymentKey,
                     15_000L
             );
-            paymentService.confirmPayment(order.getId(), request);
+
+            try {
+                PaymentResponse response = paymentService.confirmPayment(order.getId(), request);
+                outcomes.add("success: index=" + index
+                        + ", paymentKey=" + paymentKey
+                        + ", paymentId=" + response.getPaymentId());
+            } catch (Exception e) {
+                outcomes.add("fail: index=" + index
+                        + ", paymentKey=" + paymentKey
+                        + ", exception=" + e.getClass().getSimpleName()
+                        + ", message=" + e.getMessage());
+                throw e;
+            }
         });
 
         long successCount = 10L - failures.size();
         Order reloadedOrder = orderRepository.findById(order.getId()).orElseThrow();
+        String outcomeSummary = summarizeOutcomes(outcomes);
+        System.out.println("different payment key race outcomes: " + outcomeSummary);
 
-        assertThat(successCount).isEqualTo(1L);
-        assertThat(paymentCountByOrderId(order.getId())).isEqualTo(1L);
-        assertThat(reloadedOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(successCount)
+                .as("race outcomes: %s", outcomeSummary)
+                .isEqualTo(1L);
+        assertThat(paymentCountByOrderId(order.getId()))
+                .as("race outcomes: %s", outcomeSummary)
+                .isEqualTo(1L);
+        assertThat(reloadedOrder.getStatus())
+                .as("race outcomes: %s", outcomeSummary)
+                .isEqualTo(OrderStatus.COMPLETED);
     }
 
     private Order savePendingOrder(Long totalPrice) {
@@ -176,6 +222,14 @@ class PaymentIntegrityTest {
         return paymentRepository.findAll().stream()
                 .filter(payment -> payment.getOrder().getId().equals(orderId))
                 .count();
+    }
+
+    private String summarizeOutcomes(List<String> outcomes) {
+        long successCount = outcomes.stream().filter(outcome -> outcome.startsWith("success:")).count();
+        long failCount = outcomes.stream().filter(outcome -> outcome.startsWith("fail:")).count();
+        return "successCount=" + successCount
+                + ", failCount=" + failCount
+                + ", details=" + outcomes;
     }
 
     private List<Throwable> runConcurrently(int threadCount, ThrowingConsumer<Integer> task) throws Exception {

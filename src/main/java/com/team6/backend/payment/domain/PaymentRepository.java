@@ -9,8 +9,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
-    Optional<Payment> findByIdAndStatus(UUID id, PaymentStatus status);
+    Optional<Payment> findByPaymentKey(String paymentKey);
+
     Boolean existsByPaymentKey(String paymentKey);
+
     Page<Payment> findAll(Pageable pageable);
     Page<Payment> findAllByOrder_User_Id(UUID userId, Pageable pageable);
 }

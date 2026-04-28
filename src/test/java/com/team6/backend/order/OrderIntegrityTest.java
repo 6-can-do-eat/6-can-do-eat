@@ -147,6 +147,52 @@ class OrderIntegrityTest {
         assertThat(orderCountByUserId(fixture.customerId())).isEqualTo(1L);
     }
 
+    @Test
+    @DisplayName("동시성 요구사항 - 같은 주문 생성 요청이 동시에 들어와도 모두 같은 주문을 반환해야 한다")
+    void createOrder_shouldReturnSameOrder_whenSameRequestArrivesConcurrently() throws Exception {
+        OrderFixture fixture = saveOrderFixtureWithoutOrder();
+        OrderCreateRequest request = orderCreateRequest(
+                fixture.storeId(),
+                fixture.addressId(),
+                "문 앞에 놓아주세요",
+                orderItemCreateRequest(fixture.menuId(), 1)
+        );
+        List<OrderResponse> responses = new CopyOnWriteArrayList<>();
+        List<String> outcomes = new CopyOnWriteArrayList<>();
+
+        List<Throwable> failures = runConcurrently(10, index -> {
+            try {
+                OrderResponse response = orderService.createOrder(request, fixture.customerId());
+                responses.add(response);
+                outcomes.add("success: index=" + index
+                        + ", orderId=" + response.getOrderId()
+                        + ", totalPrice=" + response.getTotalPrice());
+            } catch (Exception e) {
+                outcomes.add("fail: index=" + index
+                        + ", exception=" + e.getClass().getSimpleName()
+                        + ", message=" + e.getMessage());
+                throw e;
+            }
+        });
+
+        String outcomeSummary = summarizeOrderCreateOutcomes(outcomes);
+        System.out.println("same idempotency key order create race outcomes: " + outcomeSummary);
+
+        assertThat(failures)
+                .as("race outcomes: %s", outcomeSummary)
+                .isEmpty();
+        assertThat(responses)
+                .as("race outcomes: %s", outcomeSummary)
+                .hasSize(10);
+        assertThat(responses)
+                .as("race outcomes: %s", outcomeSummary)
+                .extracting(OrderResponse::getOrderId)
+                .containsOnly(responses.get(0).getOrderId());
+        assertThat(orderCountByUserId(fixture.customerId()))
+                .as("race outcomes: %s", outcomeSummary)
+                .isEqualTo(1L);
+    }
+
     private OrderFixture saveOrderFixture(Long totalPrice) {
         OrderFixture fixture = saveOrderFixtureWithoutOrder();
 
@@ -274,6 +320,14 @@ class OrderIntegrityTest {
                 ", cancelFail=" + cancelFail +
                 ", completeFail=" + completeFail +
                 ", details=" + outcomes;
+    }
+
+    private String summarizeOrderCreateOutcomes(List<String> outcomes) {
+        long successCount = outcomes.stream().filter(outcome -> outcome.startsWith("success:")).count();
+        long failCount = outcomes.stream().filter(outcome -> outcome.startsWith("fail:")).count();
+        return "successCount=" + successCount
+                + ", failCount=" + failCount
+                + ", details=" + outcomes;
     }
 
     private record OrderFixture(

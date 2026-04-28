@@ -39,6 +39,12 @@ public class PaymentService {
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
         log.info("결제 승인 요청: orderId={}, paymentKey={}", orderId, request.getPaymentKey());
 
+        Payment existingPayment = paymentRepository.findByPaymentKey(request.getPaymentKey()).orElse(null);
+
+        if (existingPayment != null) {
+            return PaymentResponse.from(existingPayment);
+        }
+
         Order order = orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING).orElseThrow(
                 () -> {
                     log.warn("결제 승인 실패/주문 없음: orderId={}", orderId);
@@ -50,12 +56,6 @@ public class PaymentService {
             log.warn("결제 승인 실패/금액 불일치: orderId={}, requestAmount={}, orderAmount={}",
                     orderId, request.getAmount(), order.getTotalPrice());
             throw new ApplicationException(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
-        }
-        // 중복 paymentKey 체크
-        if (paymentRepository.existsByPaymentKey(request.getPaymentKey())) {
-            log.warn("결제 승인 실패 - 중복 결제 키: orderId={}, paymentKey={}",
-                    orderId, request.getPaymentKey());
-            throw new ApplicationException(PaymentErrorCode.PAYMENT_KEY_ALREADY_EXISTS);
         }
 
         /* Toss 결제 연동용

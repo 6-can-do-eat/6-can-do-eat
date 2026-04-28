@@ -26,7 +26,7 @@ public class Order extends BaseEntity {
     @Column(name = "order_id")
     private UUID id;
 
-    @Column(name = "idempotency_key", nullable = false, unique = true, updatable = false)
+    @Column(nullable = false, unique = true, updatable = false)
     private UUID idempotencyKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
