@@ -51,7 +51,6 @@ public class OrderService {
         log.info("주문 생성 요청: userId={}", userId);
         // 멱등성 키로 주문 조회
         Order existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey()).orElse(null);
-
         if (existingOrder != null) {
             List<OrderItem> existingItems = orderItemRepository.findByOrderId(existingOrder.getId());
             return OrderResponse.from(existingOrder, existingOrder.getUser().getId(), existingItems);
@@ -72,35 +71,51 @@ public class OrderService {
                 .orElseThrow(() -> {
                     log.warn("주문 생성 실패/주소 불일치: addressId={}", request.getAddressId());
                     return new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
-                });;
+                });
 
-        Order order = Order.createOrder(request.getIdempotencyKey(), user, store, address, request.getRequestText());
+        UUID orderId = UUID.randomUUID();
 
-        List<OrderItem> orderItems = request.getItemRequests().stream().map(
-                itemRequest -> {
-                    // 모든 메뉴가 같은 가게 인지 여부 확인
-                    Menu menu = menuRepository.findByMenuIdAndStore_StoreId(itemRequest.getMenuId(), store.getStoreId())
-                            .orElseThrow(() -> {
-                                log.warn("주문 생성 실패/가게 메뉴 불일치: menuId={}, storeId={}", itemRequest.getMenuId(), store.getStoreId());
-                                return new ApplicationException(MenuErrorCode.MENU_NOT_FOUND);
-                            });
-                    // 메뉴 활성화 여부 확인
-                    validateMenuOrderable(menu);
-                    return OrderItem.createOrderItem(order, menu, itemRequest.getQuantity(), menu.getPrice());
-                }
-        ).toList();
+        int inserted = orderRepository.insertOrderIfAbsent(
+                orderId,
+                request.getIdempotencyKey(),
+                userId,
+                store.getStoreId(),
+                address.getAdId(),
+                0L,
+                request.getRequestText(),
+                userId.toString()
+        );
 
-        Long totalPrice = orderItems.stream()
-                .mapToLong(item -> (long) item.getQuantity() * item.getUnitPrice())
-                .sum();
-        order.updateTotalPrice(totalPrice);
+        Order savedOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey())
+                .orElseThrow();
 
-        orderRepository.save(order);
-        orderItemRepository.saveAll(orderItems);
+        if (inserted == 1) {
+            List<OrderItem> orderItems = request.getItemRequests().stream().map(
+                    itemRequest -> {
+                        // 모든 메뉴가 같은 가게 인지 여부 확인
+                        Menu menu = menuRepository.findByMenuIdAndStore_StoreId(itemRequest.getMenuId(), store.getStoreId())
+                                .orElseThrow(() -> {
+                                    log.warn("주문 생성 실패/가게 메뉴 불일치: menuId={}, storeId={}", itemRequest.getMenuId(), store.getStoreId());
+                                    return new ApplicationException(MenuErrorCode.MENU_NOT_FOUND);
+                                });
+                        // 메뉴 활성화 여부 확인
+                        validateMenuOrderable(menu);
+                        return OrderItem.createOrderItem(savedOrder, menu, itemRequest.getQuantity(), menu.getPrice());
+                    }
+            ).toList();
 
-        log.info("주문 생성 완료: orderId={}", order.getId());
+            Long totalPrice = orderItems.stream()
+                    .mapToLong(item -> (long) item.getQuantity() * item.getUnitPrice())
+                    .sum();
+            savedOrder.updateTotalPrice(totalPrice);
+            orderItemRepository.saveAll(orderItems);
 
-        return OrderResponse.from(order, userId, orderItems);
+            log.info("주문 생성 완료: orderId={}", savedOrder.getId());
+            return OrderResponse.from(savedOrder, userId, orderItems);
+        }
+
+        List<OrderItem> existingItems = orderItemRepository.findByOrderId(savedOrder.getId());
+        return OrderResponse.from(savedOrder, userId, existingItems);
     }
 
     public Page<OrderResponse> getOrders(UUID userId, Role role, Pageable pageable) {

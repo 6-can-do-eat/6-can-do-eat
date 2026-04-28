@@ -8,7 +8,6 @@ import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.payment.domain.Payment;
 import com.team6.backend.payment.domain.PaymentErrorCode;
 import com.team6.backend.payment.domain.PaymentRepository;
-import com.team6.backend.payment.domain.PaymentStatus;
 import com.team6.backend.payment.infrastructure.TossPaymentClient;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;

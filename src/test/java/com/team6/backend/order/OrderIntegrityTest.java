@@ -91,41 +91,25 @@ class OrderIntegrityTest {
     @DisplayName("동시성 요구사항 - 같은 PENDING 주문의 상태 변경은 하나만 성공해야 한다")
     void updateStatusAndCancelOrder_shouldAllowOnlyOneSuccess_whenTheyRaceForSameOrder() throws Exception {
         OrderFixture fixture = saveOrderFixture(15_000L);
-        List<String> outcomes = new CopyOnWriteArrayList<>();
 
         List<Throwable> failures = runConcurrently(20, index -> {
             if (index % 2 == 0) {
-                try {
-                    orderService.cancelOrder(fixture.orderId());
-                    outcomes.add("cancel success");
-                } catch (Exception e) {
-                    outcomes.add("cancel fail: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-                    throw e;
-                }
+                orderService.cancelOrder(fixture.orderId());
                 return;
             }
 
-            try {
-                orderService.updateOrderStatus(
-                        fixture.orderId(),
-                        fixture.ownerId(),
-                        Role.OWNER,
-                        statusRequest(OrderStatus.COMPLETED)
-                );
-                outcomes.add("complete success");
-            } catch (Exception e) {
-                outcomes.add("complete fail: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-                throw e;
-            }
+            orderService.updateOrderStatus(
+                    fixture.orderId(),
+                    fixture.ownerId(),
+                    Role.OWNER,
+                    statusRequest(OrderStatus.COMPLETED)
+            );
         });
 
         long successCount = 20L - failures.size();
         Order reloadedOrder = orderRepository.findById(fixture.orderId()).orElseThrow();
-        String outcomeSummary = summarizeOutcomes(outcomes);
 
-        assertThat(successCount)
-                .as("race outcomes: %s", outcomeSummary)
-                .isEqualTo(1L);
+        assertThat(successCount).isEqualTo(1L);
         assertThat(reloadedOrder.getStatus()).isIn(OrderStatus.CANCELLED, OrderStatus.COMPLETED);
     }
 
@@ -158,39 +142,15 @@ class OrderIntegrityTest {
                 orderItemCreateRequest(fixture.menuId(), 1)
         );
         List<OrderResponse> responses = new CopyOnWriteArrayList<>();
-        List<String> outcomes = new CopyOnWriteArrayList<>();
 
-        List<Throwable> failures = runConcurrently(10, index -> {
-            try {
-                OrderResponse response = orderService.createOrder(request, fixture.customerId());
-                responses.add(response);
-                outcomes.add("success: index=" + index
-                        + ", orderId=" + response.getOrderId()
-                        + ", totalPrice=" + response.getTotalPrice());
-            } catch (Exception e) {
-                outcomes.add("fail: index=" + index
-                        + ", exception=" + e.getClass().getSimpleName()
-                        + ", message=" + e.getMessage());
-                throw e;
-            }
+        List<Throwable> failures = runConcurrently(10, ignored -> {
+            responses.add(orderService.createOrder(request, fixture.customerId()));
         });
 
-        String outcomeSummary = summarizeOrderCreateOutcomes(outcomes);
-        System.out.println("same idempotency key order create race outcomes: " + outcomeSummary);
-
-        assertThat(failures)
-                .as("race outcomes: %s", outcomeSummary)
-                .isEmpty();
-        assertThat(responses)
-                .as("race outcomes: %s", outcomeSummary)
-                .hasSize(10);
-        assertThat(responses)
-                .as("race outcomes: %s", outcomeSummary)
-                .extracting(OrderResponse::getOrderId)
-                .containsOnly(responses.get(0).getOrderId());
-        assertThat(orderCountByUserId(fixture.customerId()))
-                .as("race outcomes: %s", outcomeSummary)
-                .isEqualTo(1L);
+        assertThat(failures).isEmpty();
+        assertThat(responses).hasSize(10);
+        assertThat(responses.stream().map(OrderResponse::getOrderId).distinct().count()).isEqualTo(1L);
+        assertThat(orderCountByUserId(fixture.customerId())).isEqualTo(1L);
     }
 
     private OrderFixture saveOrderFixture(Long totalPrice) {
@@ -214,17 +174,17 @@ class OrderIntegrityTest {
                 "customer-" + UUID.randomUUID(),
                 "password",
                 Role.CUSTOMER,
-                "customer-" + UUID.randomUUID()
+                "고객-" + UUID.randomUUID()
         ));
         User owner = userRepository.save(new User(
                 "owner-" + UUID.randomUUID(),
                 "password",
                 Role.OWNER,
-                "owner-" + UUID.randomUUID()
+                "사장-" + UUID.randomUUID()
         ));
         Category category = categoryRepository.save(new Category("category-" + UUID.randomUUID()));
         Area area = areaRepository.save(new Area("area-" + UUID.randomUUID(), "서울", "강남구", true));
-        Store store = storeRepository.save(new Store(owner, category, area, "store-" + UUID.randomUUID(), "서울시"));
+        Store store = storeRepository.save(new Store(owner, category, area, "store-" + UUID.randomUUID(), "서울"));
         Address address = addressRepository.save(new Address(
                 new AddressRequest("서울시 강남구", "101호", false, "집"),
                 customer
@@ -308,26 +268,6 @@ class OrderIntegrityTest {
         executor.shutdown();
         assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
         return failures;
-    }
-
-    private String summarizeOutcomes(List<String> outcomes) {
-        long cancelSuccess = outcomes.stream().filter("cancel success"::equals).count();
-        long completeSuccess = outcomes.stream().filter("complete success"::equals).count();
-        long cancelFail = outcomes.stream().filter(outcome -> outcome.startsWith("cancel fail:")).count();
-        long completeFail = outcomes.stream().filter(outcome -> outcome.startsWith("complete fail:")).count();
-        return "cancelSuccess=" + cancelSuccess +
-                ", completeSuccess=" + completeSuccess +
-                ", cancelFail=" + cancelFail +
-                ", completeFail=" + completeFail +
-                ", details=" + outcomes;
-    }
-
-    private String summarizeOrderCreateOutcomes(List<String> outcomes) {
-        long successCount = outcomes.stream().filter(outcome -> outcome.startsWith("success:")).count();
-        long failCount = outcomes.stream().filter(outcome -> outcome.startsWith("fail:")).count();
-        return "successCount=" + successCount
-                + ", failCount=" + failCount
-                + ", details=" + outcomes;
     }
 
     private record OrderFixture(
