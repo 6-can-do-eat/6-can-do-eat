@@ -45,7 +45,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -96,13 +98,26 @@ class OrderServiceTest {
                 createOrderItemCreateRequest(chickenMenuId, 1),
                 createOrderItemCreateRequest(colaMenuId, 2)
         );
+        Order savedOrder = createOrder(UUID.randomUUID(), user, store, address, "문 앞에 놓아주세요", 0L);
+        ReflectionTestUtils.setField(savedOrder, "idempotencyKey", request.getIdempotencyKey());
 
-        given(orderRepository.findByIdempotencyKey(request.getIdempotencyKey())).willReturn(Optional.empty());
+        given(orderRepository.findByIdempotencyKey(request.getIdempotencyKey()))
+                .willReturn(Optional.empty(), Optional.of(savedOrder));
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
         given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
         given(menuRepository.findByMenuIdAndStore_StoreId(chickenMenuId, storeId)).willReturn(Optional.of(chicken));
         given(menuRepository.findByMenuIdAndStore_StoreId(colaMenuId, storeId)).willReturn(Optional.of(cola));
+        given(orderRepository.insertOrderIfAbsent(
+                any(UUID.class),
+                eq(request.getIdempotencyKey()),
+                eq(userId),
+                eq(storeId),
+                eq(addressId),
+                any(Long.class),
+                eq("문 앞에 놓아주세요"),
+                eq(userId.toString())
+        )).willReturn(1);
 
         OrderResponse response = orderService.createOrder(request, userId);
 
@@ -113,7 +128,16 @@ class OrderServiceTest {
         assertThat(response.getTotalPrice()).isEqualTo(22_000L);
         assertThat(response.getItems()).hasSize(2);
 
-        verify(orderRepository).save(any(Order.class));
+        verify(orderRepository).insertOrderIfAbsent(
+                any(UUID.class),
+                eq(request.getIdempotencyKey()),
+                eq(userId),
+                eq(storeId),
+                eq(addressId),
+                any(Long.class),
+                eq("문 앞에 놓아주세요"),
+                eq(userId.toString())
+        );
         verify(orderItemRepository).saveAll(anyList());
     }
 
@@ -154,7 +178,16 @@ class OrderServiceTest {
         assertThat(response.getItems()).hasSize(1);
 
         verify(userRepository, never()).getReferenceById(any(UUID.class));
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderRepository, never()).insertOrderIfAbsent(
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(Long.class),
+                any(String.class),
+                any(String.class)
+        );
     }
 
     @Test
@@ -176,18 +209,31 @@ class OrderServiceTest {
                 "요청사항",
                 createOrderItemCreateRequest(menuId, 1)
         );
+        Order savedOrder = createOrder(UUID.randomUUID(), user, store, address, "요청사항", 0L);
+        ReflectionTestUtils.setField(savedOrder, "idempotencyKey", request.getIdempotencyKey());
 
-        given(orderRepository.findByIdempotencyKey(request.getIdempotencyKey())).willReturn(Optional.empty());
+        given(orderRepository.findByIdempotencyKey(request.getIdempotencyKey()))
+                .willReturn(Optional.empty(), Optional.of(savedOrder));
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
         given(addressRepository.findByAdIdAndUser_Id(addressId, userId)).willReturn(Optional.of(address));
         given(menuRepository.findByMenuIdAndStore_StoreId(menuId, storeId)).willReturn(Optional.empty());
+        lenient().when(orderRepository.insertOrderIfAbsent(
+                any(UUID.class),
+                eq(request.getIdempotencyKey()),
+                eq(userId),
+                eq(storeId),
+                eq(addressId),
+                any(Long.class),
+                eq("요청사항"),
+                eq(userId.toString())
+        )).thenReturn(1);
 
         assertThatThrownBy(() -> orderService.createOrder(request, userId))
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(MenuErrorCode.MENU_NOT_FOUND.getMessage());
 
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderItemRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -218,7 +264,16 @@ class OrderServiceTest {
                 .isInstanceOf(ApplicationException.class)
                 .hasMessage(CommonErrorCode.RESOURCE_NOT_FOUND.getMessage());
 
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderRepository, never()).insertOrderIfAbsent(
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(UUID.class),
+                any(Long.class),
+                any(String.class),
+                any(String.class)
+        );
     }
 
     @Test

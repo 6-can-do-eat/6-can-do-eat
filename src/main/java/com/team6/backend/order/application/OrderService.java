@@ -23,6 +23,7 @@ import com.team6.backend.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrderService {
 
@@ -45,12 +45,13 @@ public class OrderService {
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
     private final AddressRepository addressRepository;
+    private final OrderCreateService orderCreateService;
 
-    @Transactional
     public OrderResponse createOrder(OrderCreateRequest request, UUID userId) {
         log.info("주문 생성 요청: userId={}", userId);
         // 멱등성 키로 주문 조회
         Order existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey()).orElse(null);
+
         if (existingOrder != null) {
             List<OrderItem> existingItems = orderItemRepository.findByOrderId(existingOrder.getId());
             return OrderResponse.from(existingOrder, existingOrder.getUser().getId(), existingItems);
@@ -73,51 +74,41 @@ public class OrderService {
                     return new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND);
                 });
 
-        UUID orderId = UUID.randomUUID();
+        Order order = Order.createOrder(request.getIdempotencyKey(), user, store, address, request.getRequestText());
 
-        int inserted = orderRepository.insertOrderIfAbsent(
-                orderId,
-                request.getIdempotencyKey(),
-                userId,
-                store.getStoreId(),
-                address.getAdId(),
-                0L,
-                request.getRequestText(),
-                userId.toString()
-        );
+        List<OrderItem> orderItems = request.getItemRequests().stream().map(
+                itemRequest -> {
+                    // 모든 메뉴가 같은 가게 인지 여부 확인
+                    Menu menu = menuRepository.findByMenuIdAndStore_StoreId(itemRequest.getMenuId(), store.getStoreId())
+                            .orElseThrow(() -> {
+                                log.warn("주문 생성 실패/가게 메뉴 불일치: menuId={}, storeId={}", itemRequest.getMenuId(), store.getStoreId());
+                                return new ApplicationException(MenuErrorCode.MENU_NOT_FOUND);
+                            });
+                    // 메뉴 활성화 여부 확인
+                    validateMenuOrderable(menu);
+                    return OrderItem.createOrderItem(order, menu, itemRequest.getQuantity(), menu.getPrice());
+                }
+        ).toList();
 
-        Order savedOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey())
-                .orElseThrow();
+        Long totalPrice = orderItems.stream()
+                .mapToLong(item -> (long) item.getQuantity() * item.getUnitPrice())
+                .sum();
+        order.updateTotalPrice(totalPrice);
 
-        if (inserted == 1) {
-            List<OrderItem> orderItems = request.getItemRequests().stream().map(
-                    itemRequest -> {
-                        // 모든 메뉴가 같은 가게 인지 여부 확인
-                        Menu menu = menuRepository.findByMenuIdAndStore_StoreId(itemRequest.getMenuId(), store.getStoreId())
-                                .orElseThrow(() -> {
-                                    log.warn("주문 생성 실패/가게 메뉴 불일치: menuId={}, storeId={}", itemRequest.getMenuId(), store.getStoreId());
-                                    return new ApplicationException(MenuErrorCode.MENU_NOT_FOUND);
-                                });
-                        // 메뉴 활성화 여부 확인
-                        validateMenuOrderable(menu);
-                        return OrderItem.createOrderItem(savedOrder, menu, itemRequest.getQuantity(), menu.getPrice());
-                    }
-            ).toList();
-
-            Long totalPrice = orderItems.stream()
-                    .mapToLong(item -> (long) item.getQuantity() * item.getUnitPrice())
-                    .sum();
-            savedOrder.updateTotalPrice(totalPrice);
-            orderItemRepository.saveAll(orderItems);
-
-            log.info("주문 생성 완료: orderId={}", savedOrder.getId());
-            return OrderResponse.from(savedOrder, userId, orderItems);
+        // 멱등성 키 unique 제약 + 예외 처리
+        // DataIntegrityViolationException 발생 시 이미 존재하는 멱등성 키
+        try {
+            return orderCreateService.save(order, orderItems, userId);
+        } catch (DataIntegrityViolationException e) {
+            Order alreadyCreatedOrder =  orderRepository.findByIdempotencyKey(request.getIdempotencyKey()).orElseThrow(
+                    () -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND)
+            );
+            List<OrderItem> existingItems =  orderItemRepository.findByOrderId(alreadyCreatedOrder.getId());
+            return OrderResponse.from(alreadyCreatedOrder, alreadyCreatedOrder.getUser().getId(), existingItems);
         }
-
-        List<OrderItem> existingItems = orderItemRepository.findByOrderId(savedOrder.getId());
-        return OrderResponse.from(savedOrder, userId, existingItems);
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getOrders(UUID userId, Role role, Pageable pageable) {
         log.info("주문 목록 조회 요청");
 
@@ -143,6 +134,7 @@ public class OrderService {
         ));
     }
 
+    @Transactional(readOnly = true)
     public OrderResponse getOrder(UUID orderId, UUID userId, Role role) {
         log.info("주문 단건 조회 요청: orderId={}", orderId);
 
