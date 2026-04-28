@@ -1,0 +1,9 @@
+.git
+.gitignore
+build/
+out/
+.gradle/
+.idea/
+bin/
+src/test/
+HELP.md
