@@ -1,6 +1,7 @@
 package com.team6.backend.user.application.service;
 
 import com.team6.backend.auth.application.service.TokenService;
+import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.redis.RedisService;
@@ -29,13 +30,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final RedisService redisService;
+    private final SecurityUtils securityUtils;
 
     /**
      * 사용자 상세 조회
      */
     @Transactional(readOnly = true)
-    public UserInfoResponse getUserDetail(String username) {
-        return UserInfoResponse.from(getUserByUsername(username));
+    public UserInfoResponse getUserDetail(UUID userId) {
+        // 본인 또는 MASTER 권한 체크 추가
+        validateOwnership(userId);
+        return UserInfoResponse.from(getUserById(userId));
     }
 
     /**
@@ -61,12 +65,12 @@ public class UserService {
      * 사용자 정보 수정
      */
     @Transactional
-    public UserInfoResponse updateUser(String username, UserInfoRequest request, User currentUser) {
+    public UserInfoResponse updateUser(UUID userId, UserInfoRequest request) {
         // 1. 권한 체크 (본인 또는 MASTER)
-        validateOwnership(username, currentUser);
+        validateOwnership(userId);
 
         // 2. 대상 조회
-        User targetUser = getUserByUsername(username);
+        User targetUser = getUserById(userId);
 
         // 3. 수정
         targetUser.updateUsername(request.getUsername());
@@ -81,14 +85,14 @@ public class UserService {
      * 사용자 권한 변경 (MASTER 전용)
      */
     @Transactional
-    public UserInfoResponse updateUserRole(String username, Role newRole, User currentUser) {
+    public UserInfoResponse updateUserRole(UUID userId, Role newRole) {
         // 1. MASTER 권한 체크
-        if (!currentUser.getRole().equals(Role.MASTER)) {
+        if (!securityUtils.getCurrentUserRole().equals(Role.MASTER)) {
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
 
         // 2. 대상 조회
-        User targetUser = getUserByUsername(username);
+        User targetUser = getUserById(userId);
 
         // 3. 동일 권한 변경 체크
         if (targetUser.getRole().equals(newRole)) {
@@ -96,7 +100,7 @@ public class UserService {
         }
 
         // 4. 본인 권한 변경 금지
-        if (targetUser.getUsername().equals(currentUser.getUsername())) {
+        if (targetUser.getId().equals(securityUtils.getCurrentUserId())) { // 현재 로그인한 사용자의 ID와 비교
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
 
@@ -135,15 +139,15 @@ public class UserService {
      * 사용자 삭제(소프트)
      */
     @Transactional
-    public void deleteUser(String username, User currentUser) {
+    public void deleteUser(UUID userId) {
         // 1. 권한 체크 (본인 또는 MASTER)
-        validateOwnership(username, currentUser);
+        validateOwnership(userId);
 
         // 2. 대상 조회
-        User targetUser = getUserByUsername(username);
+        User targetUser = getUserById(userId);
 
         // 3. 삭제 처리
-        targetUser.markDeleted(currentUser.getUsername());
+        targetUser.markDeleted(securityUtils.getCurrentUserId().toString()); // 현재 로그인한 사용자의 ID로 기록
 
         // 4. 리프레시 토큰 삭제 (재로그인 불가)
         tokenService.deleteRefreshToken(targetUser.getId());
@@ -152,13 +156,16 @@ public class UserService {
         redisService.delete("role:" + targetUser.getId());
     }
 
-    private User getUserByUsername(String username) {
-        return userRepository.findByUsernameAndDeletedAtIsNull(username)
+    private User getUserById(UUID userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApplicationException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
-    private void validateOwnership(String username, User currentUser) {
-        if (!currentUser.getRole().equals(Role.MASTER) && !currentUser.getUsername().equals(username)) {
+    private void validateOwnership(UUID userId) {
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        Role currentUserRole = securityUtils.getCurrentUserRole();
+
+        if (!currentUserRole.equals(Role.MASTER) && !userId.equals(currentUserId)) {
             throw new ApplicationException(CommonErrorCode.FORBIDDEN);
         }
     }

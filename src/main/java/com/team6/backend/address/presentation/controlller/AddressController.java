@@ -3,16 +3,12 @@ package com.team6.backend.address.presentation.controlller;
 import com.team6.backend.address.application.service.AddressService;
 import com.team6.backend.address.presentation.dto.AddressRequest;
 import com.team6.backend.address.presentation.dto.AddressResponse;
-import com.team6.backend.auth.presentation.dto.UserDetailsImpl;
-import com.team6.backend.global.infrastructure.exception.ApplicationException;
-import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -28,8 +24,8 @@ public class AddressController {
     /* 배송지 생성 */
     @PostMapping("/addresses")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<SuccessResponse<AddressResponse>> createAddress(@RequestBody AddressRequest request, @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        AddressResponse response = addressService.addAddress(request, userDetails.getUser());
+    public ResponseEntity<SuccessResponse<AddressResponse>> createAddress(@RequestBody AddressRequest request) {
+        AddressResponse response = addressService.addAddress(request);
         URI alterUrl = URI.create("api/v1/users/" + response.getAdId());
         SuccessResponse<AddressResponse> successResponse = SuccessResponse.of(CommonSuccessCode.CREATED, "배송지 생성이 완료되었습니다.", response);
         return ResponseEntity.created(alterUrl).body(successResponse);
@@ -56,7 +52,6 @@ public class AddressController {
     @GetMapping("/users/{userId}/addresses")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
     public ResponseEntity<SuccessResponse<Page<AddressResponse>>> getAddresses(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable UUID userId,
             @RequestParam(required = false) String alias,
             @RequestParam(required = false, defaultValue = "0") int page,
@@ -64,12 +59,7 @@ public class AddressController {
             @RequestParam(required = false, defaultValue = "createdAt") String sortByTime,
             @RequestParam(required = false, defaultValue = "false") boolean isAsc
     ) {
-        // 본인 확인 (경로의 userId와 로그인한 유저 ID 비교)
-        if (!userDetails.getUser().getId().equals(userId)) {
-            throw new ApplicationException(CommonErrorCode.FORBIDDEN);
-        }
-
-        Page<AddressResponse> addresses = addressService.getAddress(userDetails.getUser(), alias, page, size, sortByTime, isAsc);
+        Page<AddressResponse> addresses = addressService.getAddress(userId, alias, page, size, sortByTime, isAsc);
         return ResponseEntity.ok(SuccessResponse.ok(addresses));
     }
 
