@@ -8,6 +8,8 @@ import com.team6.backend.review.domain.exception.ReviewErrorCode;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
 import com.team6.backend.review.presentation.dto.response.ReviewResponseDto;
 import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.store.domain.exception.StoreErrorCode;
+import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.user.domain.entity.Role;
 import lombok.RequiredArgsConstructor;
 import com.team6.backend.order.domain.entity.Order;
@@ -36,6 +38,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
+    private final StoreRepository storeRepository;
     private final SecurityUtils securityUtils;
     private final AuthValidator authValidator;
 
@@ -79,7 +82,7 @@ public class ReviewService {
 
         // 리뷰 생성 후 영속성 컨텍스트를 DB에 플러시하여 집계 쿼리에 포함되도록 한 후 평균 평점 갱신
         reviewRepository.flush();
-        updateStoreAverageRating(order.getStore());
+        updateStoreAverageRating(order.getStore().getStoreId());
 
         return new ReviewResponseDto(saved);
 
@@ -133,7 +136,7 @@ public class ReviewService {
         review.update(request.getRating(), request.getContent());
 
         reviewRepository.flush();
-        updateStoreAverageRating(review.getStore());
+        updateStoreAverageRating(review.getStore().getStoreId());
 
         return new ReviewResponseDto(review);
     }
@@ -156,7 +159,7 @@ public class ReviewService {
         review.delete(String.valueOf(userId));
 
         reviewRepository.flush();
-        updateStoreAverageRating(review.getStore());
+        updateStoreAverageRating(review.getStore().getStoreId());
     }
 
     private Review findReviewById(UUID reviewId) {
@@ -168,8 +171,11 @@ public class ReviewService {
         return review;
     }
 
-    private void updateStoreAverageRating(Store store) {
-        Double averageRating = reviewRepository.calculateAverageRatingByStoreId(store.getStoreId());
+    private void updateStoreAverageRating(UUID storeId) {
+        Store store = storeRepository.findByIdForUpdate(storeId)
+                .orElseThrow(() -> new ApplicationException(StoreErrorCode.STORE_NOT_FOUND));
+
+        Double averageRating = reviewRepository.calculateAverageRatingByStoreId(storeId);
         store.updateRating(averageRating);
     }
 }
