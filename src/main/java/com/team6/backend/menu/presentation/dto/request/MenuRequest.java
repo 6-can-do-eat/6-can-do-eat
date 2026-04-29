@@ -29,8 +29,11 @@ public class MenuRequest {
     private String aiPrompt;
 
     @AssertTrue(message = "프롬프트를 입력해 주세요.")
-    public boolean isAiDescription() {
-        return aiDescription && aiPrompt != null && !aiPrompt.isBlank();
+    public boolean hasAiDescription() {
+        if (aiDescription) {
+            return aiPrompt != null && !aiPrompt.isBlank();
+        }
+        return true;
     }
 
 }

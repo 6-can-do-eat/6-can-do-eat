@@ -49,7 +49,7 @@ public class MenuService {
         );
 
         String description;
-        if (request.isAiDescription()) {
+        if (request.isAiDescription() && request.hasAiDescription()) {
             ProductDescriptionResponse aiResponse = aiService.generateProductDescription(request.getAiPrompt());
             description = aiResponse.getResult();
             if (description == null || description.isEmpty()) {
