@@ -152,7 +152,7 @@ class AddressServiceTest {
         given(addressRepository.findByUserIdAndIsDefaultTrue(userId)).willReturn(Optional.empty());
 
         // when
-        AddressResponse response = addressService.UpdateDefault(adId, true);
+        AddressResponse response = addressService.updateDefault(adId, true); // Changed from UpdateDefault to updateDefault
 
         // then
         assertThat(response.isDefault()).isTrue();

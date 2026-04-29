@@ -95,7 +95,7 @@ public class AddressService {
 
     // 기본 배송지 설정: CUSTOMER 전용
     @Transactional
-    public AddressResponse UpdateDefault(UUID adId, boolean isDefault) {
+    public AddressResponse updateDefault(UUID adId, boolean isDefault) {
         validateRole(Role.CUSTOMER);
         UUID currentUserId = securityUtils.getCurrentUserId();
         Address addressToUpdate = findById(adId);
