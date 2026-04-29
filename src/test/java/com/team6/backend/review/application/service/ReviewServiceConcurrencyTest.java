@@ -72,8 +72,8 @@ class ReviewServiceConcurrencyTest {
     }
 
     @Test
-    @DisplayName("락이 없는 상태에서 100명이 1~5점의 리뷰를 남기면, 갱신 유실(Lost Update)로 인해 진짜 평균과 불일치하게 된다.")
-    void raceConditionTest_WithoutLock() throws InterruptedException {
+    @DisplayName("실제 리뷰의 평균 평점과 DB상에 저장된 평균 평점이 일치해야 한다.")
+    void raceConditionTest_WithLock() throws InterruptedException {
         // given
         String randomStr = UUID.randomUUID().toString().substring(0, 8);
 
@@ -139,8 +139,8 @@ class ReviewServiceConcurrencyTest {
         double roundedRealAverage = Math.round(realAverage * 10) / 10.0;
 
         System.out.println("100개 리뷰의 진짜 평균: " + roundedRealAverage);
-        System.out.println("Race Condition으로 꼬여버린 Store 평점: " + updatedStore.getRating());
+        System.out.println("DB에 저장된 Store 평점: " + updatedStore.getRating());
 
-        assertThat(updatedStore.getRating()).isNotEqualTo(roundedRealAverage);
+        assertThat(updatedStore.getRating()).isEqualTo(roundedRealAverage);
     }
 }
