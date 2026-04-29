@@ -142,7 +142,9 @@ public class CategoryController {
                     @ApiResponse(responseCode = "403", description = "권한 부족",
                             content = @Content(examples = @ExampleObject(value = "{\"code\": \"CATEGORY_403\", \"status\": \"FORBIDDEN\", \"message\": \"카테고리에 대한 권한이 없습니다.\"}"))),
                     @ApiResponse(responseCode = "404", description = "카테고리 없음",
-                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"CATEGORY_404\", \"status\": \"NOT_FOUND\", \"message\": \"해당 카테고리가 존재하지 않습니다.\"}")))
+                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"CATEGORY_404\", \"status\": \"NOT_FOUND\", \"message\": \"해당 카테고리가 존재하지 않습니다.\"}"))),
+                    @ApiResponse(responseCode = "409", description = "사용 중인 카테고리",
+                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"CATEGORY_409\", \"status\": \"CONFLICT\", \"message\": \"이미 사용중인 카테고리입니다.\"}")))
             }
     )
     @DeleteMapping("/{categoryId}")
