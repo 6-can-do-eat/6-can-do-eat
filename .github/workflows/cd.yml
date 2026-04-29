@@ -57,6 +57,8 @@ jobs:
           docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE_NAME }}:latest
 
       # 6. Cloud Run 배포 (모든 Secrets 주입)
+      # Cloud Run은 내부적으로 쿠버네티스(Kubernetes) 표준을 따르기 때문에
+      # 헬스 체크를 'Probe(조사/탐침)'라고 부릅니다.
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \
@@ -64,8 +66,8 @@ jobs:
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
             --cpu-boost \
-            --liveness-check-path=/actuator/health \
-            --readiness-check-path=/actuator/health \
+            --liveness-probe-path=/actuator/health \
+            --readiness-probe-path=/actuator/health \
             --allow-unauthenticated \
             --set-env-vars "DB_URL=${{ secrets.DB_URL }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},REDIS_HOST=${{ secrets.REDIS_HOST }},REDIS_PORT=${{ secrets.REDIS_PORT }},TOSS_SECRET_KEY=${{ secrets.TOSS_SECRET_KEY }},SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }},SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }},JWT_ACCESS_TOKEN_EXPIRATION=${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION }},JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}"
 
