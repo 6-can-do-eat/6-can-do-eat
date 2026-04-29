@@ -52,6 +52,9 @@ public class MenuService {
         if (request.isAiDescription()) {
             ProductDescriptionResponse aiResponse = aiService.generateProductDescription(request.getAiPrompt());
             description = aiResponse.getResult();
+            if (description == null || description.isEmpty()) {
+                description = "메뉴 설명을 작성해주세요.";
+            }
         } else {
             description = request.getDescription();
         }
