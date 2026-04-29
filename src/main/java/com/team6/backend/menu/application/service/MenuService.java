@@ -1,5 +1,7 @@
 package com.team6.backend.menu.application.service;
 
+import com.team6.backend.ai.application.AiService;
+import com.team6.backend.ai.presentation.dto.ProductDescriptionResponse;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.menu.domain.exception.MenuErrorCode;
@@ -31,6 +33,7 @@ import java.util.UUID;
 public class MenuService {
 
     private final MenuRepository menuRepository;
+    private final AiService aiService;
     private final StoreService storeService;
     private final SecurityUtils securityUtils;
     private final AuthValidator authValidator;
@@ -46,9 +49,12 @@ public class MenuService {
         );
 
         String description;
-        if (request.isAiDescription()) {
-            // TODO: AI 요청 보내기
-            description = "AI 설명";
+        if (request.isAiDescription() && request.hasAiDescription()) {
+            ProductDescriptionResponse aiResponse = aiService.generateProductDescription(request.getAiPrompt());
+            description = aiResponse.getResult();
+            if (description == null || description.isEmpty()) {
+                description = "메뉴 설명을 작성해주세요.";
+            }
         } else {
             description = request.getDescription();
         }
