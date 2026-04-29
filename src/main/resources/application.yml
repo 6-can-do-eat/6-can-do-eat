@@ -32,3 +32,8 @@ toss:
   payments:
     secret-key: ${TOSS_SECRET_KEY}
     base-url: https://api.tosspayments.com
+
+gemini:
+  base-url: https://generativelanguage.googleapis.com
+  api-key: ${GEMINI_API_KEY}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
