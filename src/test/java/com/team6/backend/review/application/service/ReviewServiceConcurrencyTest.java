@@ -12,11 +12,13 @@ import com.team6.backend.global.infrastructure.util.AuthValidator;
 import com.team6.backend.order.domain.OrderStatus;
 import com.team6.backend.order.domain.entity.Order;
 import com.team6.backend.order.domain.repository.OrderRepository;
+import com.team6.backend.review.domain.repository.ReviewRepository;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
 import com.team6.backend.store.domain.entity.Store;
 import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +42,7 @@ import static org.mockito.Mockito.doNothing;
 class ReviewServiceConcurrencyTest {
 
     @Autowired private ReviewService reviewService;
+    @Autowired private ReviewRepository reviewRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private StoreRepository storeRepository;
     @Autowired private CategoryRepository categoryRepository;
@@ -49,73 +53,94 @@ class ReviewServiceConcurrencyTest {
     @MockitoBean private SecurityUtils securityUtils;
     @MockitoBean private AuthValidator authValidator;
 
+    private final List<User> createdUsers = new ArrayList<>();
+    private final List<Order> createdOrders = new ArrayList<>();
+    private final List<Address> createdAddresses = new ArrayList<>();
+    private Store createdStore;
+    private Category createdCategory;
+    private Area createdArea;
+
+    @AfterEach
+    void tearDown() {
+        reviewRepository.deleteAll();
+        orderRepository.deleteAll(createdOrders);
+        addressRepository.deleteAll(createdAddresses);
+        if (createdStore != null) storeRepository.delete(createdStore);
+        if (createdArea != null) areaRepository.delete(createdArea);
+        if (createdCategory != null) categoryRepository.delete(createdCategory);
+        userRepository.deleteAll(createdUsers);
+    }
+
     @Test
-    @DisplayName("동시에 100개의 리뷰가 작성될 때 동시성 문제(Lost Update)로 인해 평점 갱신이 누락되면 안 된다.")
-    void reviewConcurrencyTest() throws InterruptedException {
+    @DisplayName("실제 리뷰의 평균 평점과 DB상에 저장된 평균 평점이 일치해야 한다.")
+    void raceConditionTest_WithLock() throws InterruptedException {
         // given
         String randomStr = UUID.randomUUID().toString().substring(0, 8);
 
         User owner = new User("owner_" + randomStr, "pass", Role.OWNER, "점주님");
-        userRepository.save(owner);
+        createdUsers.add(userRepository.save(owner));
 
-        Category category = new Category("테스트 카테고리 " + randomStr);
-        categoryRepository.save(category);
-
-        Area area = new Area("테스트 지역 " + randomStr, "서울시", "강남구", true);
-        areaRepository.save(area);
-
-        Store store = new Store(owner, category, area, "동시성 테스트 가게 " + randomStr, "강남구 123");
-        storeRepository.save(store);
+        createdCategory = categoryRepository.save(new Category("테스트 카테고리 " + randomStr));
+        createdArea = areaRepository.save(new Area("테스트 지역 " + randomStr, "서울시", "강남구", true));
+        createdStore = storeRepository.save(new Store(owner, createdCategory, createdArea, "동시성 테스트 가게 " + randomStr, "강남구 123"));
 
         int threadCount = 100;
-        List<Order> orders = new ArrayList<>();
 
         for (int i = 0; i < threadCount; i++) {
             User customer = new User("cust_" + randomStr + "_" + i, "pass", Role.CUSTOMER, "고객" + i);
-            userRepository.save(customer);
+            createdUsers.add(userRepository.save(customer));
 
             Address address = new Address();
             ReflectionTestUtils.setField(address, "user", customer);
             ReflectionTestUtils.setField(address, "address", "배송지 " + i);
-            addressRepository.save(address);
+            createdAddresses.add(addressRepository.save(address));
 
-            Order order = Order.createOrder(UUID.randomUUID(), customer, store, address, "조심히 와주세요");
+            Order order = Order.createOrder(UUID.randomUUID(), customer, createdStore, address, "조심히 와주세요");
             ReflectionTestUtils.setField(order, "status", OrderStatus.COMPLETED);
-            orderRepository.save(order);
-
-            orders.add(order);
+            createdOrders.add(orderRepository.save(order));
         }
 
         doNothing().when(authValidator).validateAccess(any(), any(), any(), any());
 
-        ExecutorService executorService = Executors.newFixedThreadPool(32);
-        CountDownLatch latch = new CountDownLatch(threadCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(threadCount);
 
         // when
-        // 50명은 1점, 50명은 5점을 동시에 작성
         for (int i = 0; i < threadCount; i++) {
-            final UUID orderId = orders.get(i).getId();
-            final int rating = (i % 2 == 0) ? 1 : 5;
+            final UUID orderId = createdOrders.get(i).getId();
 
             executorService.submit(() -> {
                 try {
+                    startLatch.await();
+
+                    int randomRating = ThreadLocalRandom.current().nextInt(1, 6);
+
                     ReviewRequestDto request = new ReviewRequestDto();
-                    ReflectionTestUtils.setField(request, "rating", rating);
-                    ReflectionTestUtils.setField(request, "content", rating + "점 드립니다!");
+                    ReflectionTestUtils.setField(request, "rating", randomRating);
+                    ReflectionTestUtils.setField(request, "content", randomRating + "점 드립니다!");
 
                     reviewService.createReview(orderId, request);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
-                    latch.countDown();
+                    endLatch.countDown();
                 }
             });
         }
 
-        latch.await();
+        startLatch.countDown();
+        endLatch.await();
 
         // then
-        Store updatedStore = storeRepository.findById(store.getStoreId()).orElseThrow();
-        System.out.println("기대하는 평점: 3.0 / 실제 반영된 평점: " + updatedStore.getRating());
+        Store updatedStore = storeRepository.findById(createdStore.getStoreId()).orElseThrow();
 
-        assertThat(updatedStore.getRating()).isEqualTo(3.0);
+        Double realAverage = reviewRepository.calculateAverageRatingByStoreId(createdStore.getStoreId());
+        double roundedRealAverage = Math.round(realAverage * 10) / 10.0;
+
+        System.out.println("100개 리뷰의 진짜 평균: " + roundedRealAverage);
+        System.out.println("DB에 저장된 Store 평점: " + updatedStore.getRating());
+
+        assertThat(updatedStore.getRating()).isEqualTo(roundedRealAverage);
     }
 }

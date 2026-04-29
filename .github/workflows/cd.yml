@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - main  # 배포를 원하는 브랜치로 설정
-      - feature/poldTest # 배포 테스트만 하는 브랜치
-  workflow_dispatch: # 일단 테스트용 수동 버튼 생성 추후 삭제
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -48,31 +46,27 @@ jobs:
       # 4. Docker 인증 설정
       - name: Docker Auth
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+          gcloud auth configure-docker ${{ secrets.GCP_REGION}}-docker.pkg.dev
 
       # 5. Docker 이미지 빌드 및 푸시
       - name: Build and Push Image
         run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE_NAME }}:latest .
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE_NAME }}:latest
 
       # 6. Cloud Run 배포 (모든 Secrets 주입)
+      # Cloud Run은 내부적으로 쿠버네티스(Kubernetes) 표준을 따르기 때문에
+      # 헬스 체크를 'Probe(조사/탐침)'라고 부릅니다.
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest \
-            --region ${{ env.REGION }} \
+          gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE_NAME }}:latest \
+            --region ${{ secrets.GCP_REGION }} \
             --platform managed \
+            --cpu-boost \
+            --liveness-probe="httpGet.path=/actuator/health,httpGet.port=8080,timeoutSeconds=10" \
             --allow-unauthenticated \
-            --set-env-vars "DB_URL=${{ secrets.DB_URL }},\
-          DB_USERNAME=${{ secrets.DB_USERNAME }},\
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }},\
-          REDIS_HOST=${{ secrets.REDIS_HOST }},\
-          REDIS_PORT=${{ secrets.REDIS_PORT }},\
-          TOSS_SECRET_KEY=${{ secrets.TOSS_SECRET_KEY }},\
-          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }},\
-          SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }},\
-          SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }}"
+            --set-env-vars "DB_URL=${{ secrets.DB_URL }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},REDIS_HOST=${{ secrets.REDIS_HOST }},REDIS_PORT=${{ secrets.REDIS_PORT }},TOSS_SECRET_KEY=${{ secrets.TOSS_SECRET_KEY }},SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }},SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }},SLACK_WEBHOOK=${{ secrets.SLACK_WEBHOOK }},JWT_ACCESS_TOKEN_EXPIRATION=${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION }},JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}"
 
       # 7. 배포 성공 알림 (Slack)
       - name: Slack Notification on Success
@@ -90,7 +84,7 @@ jobs:
         if: failure()
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_COLOR: '#ff0000'
           SLACK_MESSAGE: "⚠️ 배포 실패! 이전 리비전이 유지됩니다. 로그를 확인하세요."
