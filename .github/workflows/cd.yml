@@ -63,10 +63,10 @@ jobs:
             --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ secrets.GCP_IMAGE_NAME }}:latest \
             --region ${{ secrets.GCP_REGION }} \
             --platform managed \
+            --cpu-boost \
+            --liveness-check-path=/actuator/health \
+            --readiness-check-path=/actuator/health \
             --allow-unauthenticated \
-            --startup-cpu-boost \
-            --health-check-type=http \
-            --health-check-path=/actuator/health \
             --set-env-vars "DB_URL=${{ secrets.DB_URL }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},REDIS_HOST=${{ secrets.REDIS_HOST }},REDIS_PORT=${{ secrets.REDIS_PORT }},TOSS_SECRET_KEY=${{ secrets.TOSS_SECRET_KEY }},SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }},SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }},JWT_ACCESS_TOKEN_EXPIRATION=${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION }},JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }},JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}"
 
       # 7. 배포 성공 알림 (Slack)
