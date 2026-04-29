@@ -349,4 +349,32 @@ class StoreRepositoryTest {
         store.updateRating(5.0);
         assertThat(store.getRating()).isEqualTo(5.0);
     }
+
+    @Test
+    @DisplayName("복합 필터링: 카테고리와 가게 이름 '일부(부분 일치)'가 주어졌을 때 교집합만 정확히 노출되는지 확인")
+    void searchStores_CategoryAndPartialName() {
+        // given
+        // 1. [정답] 카테고리 일치(O), 이름 일부 포함(O)
+        Store targetStore = new Store(owner, category1, area1, "황금올리브 후라이드", "주소1");
+
+        // 2. [오답] 카테고리 불일치(X - 피자 카테고리), 이름 일부 포함(O) -> 카테고리가 달라서 걸러져야 함
+        Store wrongCategoryStore = new Store(owner, category2, area1, "후라이드 피자", "주소2");
+
+        // 3. [오답] 카테고리 일치(O - 치킨 카테고리), 이름 일부 포함(X) -> 이름에 키워드가 없어서 걸러져야 함
+        Store wrongNameStore = new Store(owner, category1, area1, "양념통닭", "주소3");
+
+        storeRepository.save(targetStore);
+        storeRepository.save(wrongCategoryStore);
+        storeRepository.save(wrongNameStore);
+
+        // when
+        // 카테고리는 category1(치킨), 이름 키워드는 "후라이드" (이름의 뒷부분 일부만 입력)
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<Store> result = storeRepository.searchStores("후라이드", category1.getCategoryId(), null, pageable);
+
+        // then
+        // '후라이드 피자'와 '양념통닭'은 정확히 걸러지고 '황금올리브 후라이드' 1개만 나와야 성공
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("황금올리브 후라이드");
+    }
 }

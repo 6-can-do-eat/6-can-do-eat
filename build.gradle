@@ -40,7 +40,12 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
-    // ... 기존에 적어주신 testImplementation들 아래에 추가 ...
+    // QueryDSL
+    implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.0'
+    annotationProcessor "io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
     // test시 활용할 가짜 DB
     testImplementation 'com.h2database:h2'
 }
