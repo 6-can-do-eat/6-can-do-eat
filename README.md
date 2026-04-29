@@ -15,6 +15,7 @@
 ## 목차
 
 - [프로젝트 소개](#프로젝트-소개)
+- [프로젝트 목표](#프로젝트-목표)
 - [팀원 소개](#팀원-소개)
 - [기술 스택](#기술-스택)
 - [패키지 구조](#패키지-구조)
@@ -31,10 +32,16 @@
 Spring Boot 기반 음식점 배달 플랫폼 백엔드
 
 - JWT 기반 인증/인가 및 역할 기반 권한 관리 (CUSTOMER / OWNER / MANAGER / MASTER)
-- Toss Payments 결제 시스템 연동
 - Gemini AI 기반 메뉴 설명 자동 생성
 - Soft Delete 기반 데이터 관리 전략
 - 주문 상태 흐름 관리 및 5분 이내 취소 정책
+
+---
+
+### 프로젝트 목표
+- RBAC 기반 인증 아키텍처 및 이중 인가 체계 구축
+- 컨테이너 기반 배포 환경 구축
+- 결제 및 주문 시스템의 멱등성 보장과 동시성 제어
 
 ---
 
@@ -49,12 +56,13 @@ Spring Boot 기반 음식점 배달 플랫폼 백엔드
 ---
 
 ### 기술 스택
-| 분류       | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Backend  | ![Java](https://img.shields.io/badge/Java_17-ED8B00?style=flat&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.0.5-6DB33F?style=flat&logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=flat&logo=springsecurity&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat&logo=spring&logoColor=white) ![Spring AI](https://img.shields.io/badge/Spring_AI-6DB33F?style=flat&logo=spring&logoColor=white) |
-| Database | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| AI       | ![Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Infra    | ![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)                                                                                                                                                                                                                                                                                                                                       |
+| 분류       | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|:---------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Backend  | ![Java](https://img.shields.io/badge/Java_17-ED8B00?style=flat&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.0.5-6DB33F?style=flat&logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=flat&logo=springsecurity&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat&logo=spring&logoColor=white) |
+| Database | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white)                                                                                                                                                                                                                                                                                                                                                |
+| AI       | ![Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=googlegemini&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Infra    | ![GCP](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat&logo=googlecloud&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat&logo=docker&logoColor=white)                                                                                                                                                                                                                                    |
+| Tools    | ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat&logo=swagger&logoColor=black) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat&logo=slack&logoColor=white)                                                                                                                                                                                                                                                                                                                                                         |                                                                                                                                                                                                                                                                                                                                                      |
 
 ---
 
@@ -82,8 +90,30 @@ src/main/java
             │       ├── controller
             │       │   └── AddressController.java
             │       └── dto
-            │           ├── AddressRequest.java
-            │           └── AddressResponse.java
+            │           ├── request
+            │           │   ├── AddressRequest.java
+            │           │   └── AddressUpdateRequest.java
+            │           └── response
+            │               └── AddressResponse.java
+            ├── ai
+            │   ├── application
+            │   │   └── AiService.java
+            │   ├── domain
+            │   │   ├── AiErrorCode.java
+            │   │   ├── entity
+            │   │   │   ├── AiRequestLog.java
+            │   │   │   └── AiRequestType.java
+            │   │   └── repository
+            │   │       └── AiRequestLogRepository.java
+            │   ├── infrastructure
+            │   │   ├── GeminiClient.java
+            │   │   └── dto
+            │   │       ├── GeminiGenerateRequest.java
+            │   │       └── GeminiGenerateResponse.java
+            │   └── presentation
+            │       └── dto
+            │           ├── ProductDescriptionRequest.java
+            │           └── ProductDescriptionResponse.java
             ├── area
             │   ├── application
             │   │   └── service
@@ -148,6 +178,7 @@ src/main/java
             │       ├── config
             │       │   ├── AuditorConfig.java
             │       │   ├── JpaAuditingConfig.java
+            │       │   ├── QueryDslConfig.java
             │       │   ├── RedisConfig.java
             │       │   ├── SwaggerConfig.java
             │       │   └── security
@@ -189,7 +220,9 @@ src/main/java
             │   │   ├── exception
             │   │   │   └── MenuErrorCode.java
             │   │   └── repository
-            │   │       └── MenuRepository.java
+            │   │       ├── MenuRepository.java
+            │   │       ├── MenuRepositoryCustom.java
+            │   │       └── MenuRepositoryCustomImpl.java
             │   └── presentation
             │       ├── controller
             │       │   └── MenuController.java
@@ -201,6 +234,7 @@ src/main/java
             │               └── MenuResponse.java
             ├── order
             │   ├── application
+            │   │   ├── OrderCreateService.java
             │   │   └── OrderService.java
             │   ├── domain
             │   │   ├── OrderErrorCode.java
@@ -270,7 +304,9 @@ src/main/java
             │   │   ├── exception
             │   │   │   └── StoreErrorCode.java
             │   │   └── repository
-            │   │       └── StoreRepository.java
+            │   │       ├── StoreRepository.java
+            │   │       ├── StoreRepositoryCustom.java
+            │   │       └── StoreRepositoryCustomImpl.java
             │   └── presentation
             │       ├── controller
             │       │   └── StoreController.java
@@ -287,6 +323,8 @@ src/main/java
                 │   ├── entity
                 │   │   ├── Role.java
                 │   │   └── User.java
+                │   ├── exception
+                │   │   └── UserErrorCode.java
                 │   └── repository
                 │       └── UserInfoRepository.java
                 └── presentation
@@ -305,18 +343,18 @@ src/main/java
 
 ### 도메인 정의
 
-| 도메인      | 설명                        |
-|:---------|:--------------------------|
-| Auth     | 회원가입 / 로그인 / 로그아웃 / 토큰 갱신 |
-| User     | 사용자 관리                    |
-| Area     | 운영 지역 관리                  |
-| Category | 카테고리 관리                   |
-| Store    | 가게 등록 및 관리                |
-| Menu     | 메뉴 관리                     |
-| Order    | 주문 생성 및 상태 관리             |
-| Review   | 리뷰 및 별점 관리                |
-| Payment  | 결제 관리 (Toss Payments 연동)  |
-| Address  | 배송지 관리                    |
+| 도메인      | 설명                           |
+|:---------|:-----------------------------|
+| Auth     | 회원가입 / 로그인 / 로그아웃 / 토큰 갱신    |
+| User     | 사용자 관리                       |
+| Area     | 운영 지역 관리                     |
+| Category | 카테고리 관리                      |
+| Store    | 가게 등록 및 관리                   |
+| Menu     | 메뉴 관리 (AI 기반 메뉴 설명 자동 생성 지원) |
+| Order    | 주문 생성 및 상태 관리                |
+| Review   | 리뷰 및 별점 관리                   |
+| Payment  | 결제 관리                        |
+| Address  | 배송지 관리                       |
 
 ---
 
@@ -333,9 +371,7 @@ src/main/java
 > - 인증: JWT (`Authorization: Bearer {token}`), 회원가입·로그인 제외
 > - Content-Type: `application/json`
 
-> Swagger 문서는 배포 후 업데이트 예정
-
-[<img src="https://img.shields.io/badge/Swagger-85EA2D?style=flat&logo=swagger&logoColor=black" height="25">]()
+[<img src="https://img.shields.io/badge/Swagger-85EA2D?style=flat&logo=swagger&logoColor=black" height="25">](https://editor.swagger.io/?url=https://raw.githubusercontent.com/6-can-do-eat/6-can-do-eat/dev/docs/swagger.yaml)
 
 ---
 
@@ -352,6 +388,13 @@ src/main/java
 <summary>CD Flow</summary>
 
 ![CD 플로우](docs/images/cd-flow.png)
+
+</details>
+
+<details>
+<summary>인프라 다이어그램</summary>
+
+추가예정
 
 </details>
 

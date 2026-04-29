@@ -6,6 +6,8 @@ import com.team6.backend.payment.application.PaymentService;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
 import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
 import com.team6.backend.payment.presetation.dto.PaymentResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.UUID;
 
+@Tag(name = "Payment", description = "결제 관리 API")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final SecurityUtils securityUtils;
 
+    @Operation(summary = "결제 승인")
     @PostMapping("/orders/{orderId}/payments")
     @PreAuthorize("hasAnyRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<PaymentResponse>> confirmPayment(@PathVariable UUID orderId,
@@ -35,6 +39,7 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created(paymentService.confirmPayment(orderId, request)));
     }
 
+    @Operation(summary = "결제 내역 조회")
     @GetMapping("/payments")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
     public ResponseEntity<SuccessResponse<Page<PaymentResponse>>> getPayments(
@@ -47,6 +52,7 @@ public class PaymentController {
                 pageable)));
     }
 
+    @Operation(summary = "결제 내역 상세 조회")
     @GetMapping("/payments/{paymentId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
     public ResponseEntity<SuccessResponse<PaymentResponse>> getPayment(@PathVariable UUID paymentId,
@@ -54,6 +60,7 @@ public class PaymentController {
         return ResponseEntity.ok(SuccessResponse.ok(paymentService.getPayment(paymentId, userId, securityUtils.getCurrentUserRole())));
     }
 
+    @Operation(summary = "결제 삭제 (소프트 삭제)")
     @DeleteMapping("/payments/{paymentId}")
     @PreAuthorize("hasAnyRole('MASTER')")
     public ResponseEntity<SuccessResponse<?>> deletePayment(@PathVariable UUID paymentId) {
