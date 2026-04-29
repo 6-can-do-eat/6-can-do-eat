@@ -12,6 +12,7 @@ import com.team6.backend.review.domain.repository.ReviewRepository;
 import com.team6.backend.review.presentation.dto.request.ReviewRequestDto;
 import com.team6.backend.review.presentation.dto.response.ReviewResponseDto;
 import com.team6.backend.store.domain.entity.Store;
+import com.team6.backend.store.domain.repository.StoreRepository;
 import com.team6.backend.user.domain.entity.Role;
 import com.team6.backend.user.domain.entity.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,9 @@ class ReviewServiceTest {
 
     @InjectMocks
     private ReviewService reviewService;
+
+    @Mock
+    private StoreRepository storeRepository;
 
     @Mock
     private ReviewRepository reviewRepository;
@@ -99,6 +103,8 @@ class ReviewServiceTest {
         ReflectionTestUtils.setField(savedReview, "order", mockOrder);
         ReflectionTestUtils.setField(savedReview, "rating", 5);
         ReflectionTestUtils.setField(savedReview, "content", "맛있어요!");
+
+        given(storeRepository.findByIdForUpdate(storeId)).willReturn(Optional.of(mockStore));
 
         given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
         given(reviewRepository.calculateAverageRatingByStoreId(storeId)).willReturn(5.0);
@@ -168,6 +174,8 @@ class ReviewServiceTest {
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(review.getStore()).willReturn(mockStore);
         given(review.getUser()).willReturn(mockUser);
+
+        given(storeRepository.findByIdForUpdate(storeId)).willReturn(Optional.of(mockStore));
 
         // when
         reviewService.deleteReview(reviewId);
