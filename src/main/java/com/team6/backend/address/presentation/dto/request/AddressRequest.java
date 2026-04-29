@@ -1,4 +1,4 @@
-package com.team6.backend.address.presentation.dto;
+package com.team6.backend.address.presentation.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;

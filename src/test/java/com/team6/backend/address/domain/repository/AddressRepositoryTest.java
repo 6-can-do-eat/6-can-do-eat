@@ -1,7 +1,7 @@
 package com.team6.backend.address.domain.repository;
 
 import com.team6.backend.address.domain.entity.Address;
-import com.team6.backend.address.presentation.dto.AddressRequest;
+import com.team6.backend.address.presentation.dto.request.AddressRequest;
 import com.team6.backend.global.infrastructure.config.AuditorConfig;
 import com.team6.backend.global.infrastructure.config.JpaAuditingConfig;
 import com.team6.backend.user.domain.entity.Role;

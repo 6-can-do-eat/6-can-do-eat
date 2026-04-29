@@ -2,8 +2,9 @@ package com.team6.backend.address.application.service;
 
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.address.domain.repository.AddressRepository;
-import com.team6.backend.address.presentation.dto.AddressRequest;
-import com.team6.backend.address.presentation.dto.AddressResponse;
+import com.team6.backend.address.presentation.dto.request.AddressRequest;
+import com.team6.backend.address.presentation.dto.response.AddressResponse;
+import com.team6.backend.address.presentation.dto.request.AddressUpdateRequest;
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
@@ -84,7 +85,7 @@ public class AddressService {
 
     // 배송지 수정: CUSTOMER 전용
     @Transactional
-    public AddressResponse updateAddress(UUID adId, AddressRequest request) {
+    public AddressResponse updateAddress(UUID adId, AddressUpdateRequest request) {
         validateRole(Role.CUSTOMER);
         Address address = findById(adId);
         address.updateAddress(request);

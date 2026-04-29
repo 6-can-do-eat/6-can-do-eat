@@ -1,7 +1,7 @@
 package com.team6.backend.address.domain.entity;
 
-import aQute.bnd.annotation.metatype.Meta;
-import com.team6.backend.address.presentation.dto.AddressRequest;
+import com.team6.backend.address.presentation.dto.request.AddressRequest;
+import com.team6.backend.address.presentation.dto.request.AddressUpdateRequest;
 import com.team6.backend.global.infrastructure.entity.BaseEntity;
 import com.team6.backend.user.domain.entity.User;
 import jakarta.persistence.*;
@@ -47,10 +47,9 @@ public class Address extends BaseEntity {
         this.alias = request.getAlias();
     }
 
-    public void updateAddress(AddressRequest request) {
+    public void updateAddress(AddressUpdateRequest request) {
         this.address = request.getAddress();
         this.detail = request.getDetail();
-        this.isDefault = request.isDefault();
         this.alias = request.getAlias();
     }
 
