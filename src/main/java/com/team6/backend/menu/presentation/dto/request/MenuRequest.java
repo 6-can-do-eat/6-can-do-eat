@@ -22,7 +22,7 @@ public class MenuRequest {
     @Schema(description = "메뉴 설명", example = "추억 속의 그 맛")
     private String description;
 
-    @Schema(description = "AI 설명 생성 여부", defaultValue = "true")
+    @Schema(description = "AI 설명 생성 여부", defaultValue = "false")
     private boolean aiDescription = false;
 
     @Schema(description = "AI 프롬프트 (aiDescription이 true일 때 필수)", example = "된장찌개 설명을 작성해줘")
@@ -30,10 +30,7 @@ public class MenuRequest {
 
     @AssertTrue(message = "프롬프트를 입력해 주세요.")
     public boolean isAiDescription() {
-        if (aiDescription) {
-            return aiPrompt != null && !aiPrompt.isBlank();
-        }
-        return true;
+        return aiDescription && aiPrompt != null && !aiPrompt.isBlank();
     }
 
 }
