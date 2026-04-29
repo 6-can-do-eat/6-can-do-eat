@@ -104,6 +104,11 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public Page<ReviewResponseDto> getReviews(UUID storeId, int page, int size, String sortBy, boolean isAsc) {
+        storeRepository.findById(storeId).orElseThrow(() -> {
+            log.warn("[REVIEW] 리뷰 조회 실패: 존재하지 않는 가게입니다. reviewId: {}", storeId);
+            return new ApplicationException(StoreErrorCode.STORE_NOT_FOUND);
+        });
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
