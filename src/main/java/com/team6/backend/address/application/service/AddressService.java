@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -94,11 +95,23 @@ public class AddressService {
 
     // 기본 배송지 설정: CUSTOMER 전용
     @Transactional
-    public AddressResponse UpdateDefault(UUID adId) {
+    public AddressResponse UpdateDefault(UUID adId, boolean isDefault) {
         validateRole(Role.CUSTOMER);
-        Address address = findById(adId);
-        address.updateDefault();
-        return new AddressResponse(address);
+        UUID currentUserId = securityUtils.getCurrentUserId();
+        Address addressToUpdate = findById(adId);
+
+        // 같을 경우 못 바꾸게
+        if (isDefault) {
+            Optional<Address> currentDefaultAddress = addressRepository.findByUserIdAndIsDefaultTrue(currentUserId);
+            currentDefaultAddress.ifPresent(addr -> {
+                if (!addr.getAdId().equals(adId)) { // Ensure it's not the same address
+                    addr.updateDefault(false);
+                }
+            });
+        }
+        
+        addressToUpdate.updateDefault(isDefault);
+        return new AddressResponse(addressToUpdate);
     }
 
     // 공통 역할 검증 메서드

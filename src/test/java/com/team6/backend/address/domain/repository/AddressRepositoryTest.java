@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -78,5 +80,23 @@ class AddressRepositoryTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getAlias()).isEqualTo("HOME");
+    }
+
+    @Test
+    @DisplayName("사용자 ID로 기본 배송지 조회")
+    void findByUserIdAndIsDefaultTrue() {
+        // given
+        AddressRequest request1 = new AddressRequest("서울시", "강남구", true, "기본");
+        AddressRequest request2 = new AddressRequest("경기도", "성남시", false, "일반");
+        addressRepository.save(new Address(request1, user));
+        addressRepository.save(new Address(request2, user));
+
+        // when
+        Optional<Address> result = addressRepository.findByUserIdAndIsDefaultTrue(user.getId());
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().isDefault()).isTrue();
+        assertThat(result.get().getAlias()).isEqualTo("기본");
     }
 }

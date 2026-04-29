@@ -75,8 +75,11 @@ public class AddressController {
     /* 기본 배송지 설정 */
     @PatchMapping("/addresses/{adId}/default")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<SuccessResponse<AddressResponse>> updateDefaultAddress(@PathVariable UUID adId) {
-        AddressResponse response = addressService.UpdateDefault(adId);
+    public ResponseEntity<SuccessResponse<AddressResponse>> updateDefaultAddress(
+            @PathVariable UUID adId,
+            @RequestParam(name = "default") boolean isDefault
+    ) {
+        AddressResponse response = addressService.UpdateDefault(adId, isDefault);
         SuccessResponse<AddressResponse> successResponse = SuccessResponse.of(CommonSuccessCode.OK, "기본 배송지 설정이 완료되었습니다.", response);
         return ResponseEntity.ok(successResponse);
     }

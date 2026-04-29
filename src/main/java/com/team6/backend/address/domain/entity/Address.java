@@ -53,9 +53,8 @@ public class Address extends BaseEntity {
         this.alias = request.getAlias();
     }
 
-    // 어차피 값이 두개 밖에 없으니 dto갖고 오지 말자
-    public void updateDefault() {
-        this.isDefault = !this.isDefault;
+    public void updateDefault(boolean isDefault) {
+        this.isDefault = isDefault;
     }
 
 }
