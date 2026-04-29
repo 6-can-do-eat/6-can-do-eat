@@ -79,7 +79,7 @@ public class AddressController {
             @PathVariable UUID adId,
             @RequestParam(name = "default") boolean isDefault
     ) {
-        AddressResponse response = addressService.UpdateDefault(adId, isDefault);
+        AddressResponse response = addressService.updateDefault(adId, isDefault);
         SuccessResponse<AddressResponse> successResponse = SuccessResponse.of(CommonSuccessCode.OK, "기본 배송지 설정이 완료되었습니다.", response);
         return ResponseEntity.ok(successResponse);
     }
