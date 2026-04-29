@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - main  # 배포를 원하는 브랜치로 설정
-      - feature/poldTest # 배포 테스트만 하는 브랜치
-  workflow_dispatch: # 일단 테스트용 수동 버튼 생성 추후 삭제
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
