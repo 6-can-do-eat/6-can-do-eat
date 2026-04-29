@@ -8,7 +8,6 @@ import com.team6.backend.order.domain.repository.OrderRepository;
 import com.team6.backend.payment.domain.Payment;
 import com.team6.backend.payment.domain.PaymentErrorCode;
 import com.team6.backend.payment.domain.PaymentRepository;
-import com.team6.backend.payment.domain.PaymentStatus;
 import com.team6.backend.payment.infrastructure.TossPaymentClient;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
@@ -39,23 +38,21 @@ public class PaymentService {
     public PaymentResponse confirmPayment(UUID orderId, PaymentConfirmRequest request) {
         log.info("결제 승인 요청: orderId={}, paymentKey={}", orderId, request.getPaymentKey());
 
-        Order order = orderRepository.findByIdAndStatus(orderId, OrderStatus.PENDING).orElseThrow(
-                () -> {
-                    log.warn("결제 승인 실패/주문 없음: orderId={}", orderId);
-                    return new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND);
-                }
-        );
-        // 결제 금액 일치 여부
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ApplicationException(OrderErrorCode.ORDER_NOT_FOUND));
+
+        // 결제 금액과 주문 금액 일치 여부
         if (!Objects.equals(request.getAmount(), order.getTotalPrice())) {
-            log.warn("결제 승인 실패/금액 불일치: orderId={}, requestAmount={}, orderAmount={}",
-                    orderId, request.getAmount(), order.getTotalPrice());
             throw new ApplicationException(PaymentErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
-        // 중복 paymentKey 체크
-        if (paymentRepository.existsByPaymentKey(request.getPaymentKey())) {
-            log.warn("결제 승인 실패 - 중복 결제 키: orderId={}, paymentKey={}",
-                    orderId, request.getPaymentKey());
-            throw new ApplicationException(PaymentErrorCode.PAYMENT_KEY_ALREADY_EXISTS);
+
+        // 이미 PENDING이 아닌 주문은 "새 결제 진행" 대상 X
+        // 여기서 같은 paymentKey로 재시도한 경우라면 기존 Payment를 반환하고,
+        // 같은 orderId에 다른 paymentKey로 들어온 경우라면 조회가 안 되므로 충돌 처리
+        if (order.getStatus() != OrderStatus.PENDING) {
+            return paymentRepository.findByPaymentKey(request.getPaymentKey())
+                    .map(PaymentResponse::from)
+                    .orElseThrow(() -> new ApplicationException(PaymentErrorCode.PAYMENT_KEY_ALREADY_EXISTS));
         }
 
         /* Toss 결제 연동용
@@ -63,15 +60,36 @@ public class PaymentService {
         Payment payment = Payment.createPayment(order, response.getPaymentKey(), response.getTotalAmount());
         */
 
-        Payment payment = Payment.createPayment(order, request.getPaymentKey(), request.getAmount());
-        payment.updatePaymentStatus(PaymentStatus.COMPLETED);
-        paymentRepository.save(payment);
+        UUID paymentId = UUID.randomUUID();
 
-        order.updateOrderStatus(OrderStatus.COMPLETED);
+        // 결제 생성은 DB upsert 쿼리
+        // 같은 paymentKey 동시 요청이면 payment_key unique 충돌 시 do nothing
+        // 같은 orderId에 다른 paymentKey 동시 요청이면 order_id unique 충돌 시 do nothing
+        // 반환값이 1이면 내가 실제 insert에 성공한 요청이고, 0이면 이미 다른 요청이 선점한 상태
+        int inserted = paymentRepository.insertPaymentIfAbsent(
+                paymentId,
+                orderId,
+                request.getPaymentKey(),
+                request.getAmount(),
+                order.getUser().getId().toString()
+        );
 
-        log.info("결제 승인 완료: paymentId={}, orderId={}", payment.getId(), orderId);
+        // insert에 성공한 경우에만 주문 상태를 COMPLETED로 변경
+        if (inserted == 1) {
+            order.updateOrderStatus(OrderStatus.COMPLETED);
 
-        return PaymentResponse.from(payment);
+            Payment payment = paymentRepository.findById(paymentId)
+                    .orElseThrow(() -> new ApplicationException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+            log.info("결제 승인 완료: paymentId={}, orderId={}", payment.getId(), orderId);
+            return PaymentResponse.from(payment);
+        }
+
+        // insert에 실패한 경우:
+        // 같은 paymentKey 요청이 먼저 성공했다면 기존 Payment를 반환
+        // 같은 orderId에 다른 paymentKey 요청이 먼저 성공했다면 조회 결과가 없으므로 충돌로 처리
+        return paymentRepository.findByPaymentKey(request.getPaymentKey())
+                .map(PaymentResponse::from)
+                .orElseThrow(() -> new ApplicationException(PaymentErrorCode.PAYMENT_KEY_ALREADY_EXISTS));
     }
 
     public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {

@@ -15,6 +15,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderCreateRequest {
     @NotNull
+    private UUID idempotencyKey;
+    @NotNull
     private UUID storeId;
     @NotNull
     private UUID addressId;
