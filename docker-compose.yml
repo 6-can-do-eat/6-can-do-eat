@@ -11,7 +11,7 @@ services:
       # application.yml의 설정을 컨테이너 환경에 맞춰 덮어씌움
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=6candoeat!
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
 
       # Redis 설정 두 줄 추가
       - REDIS_HOST=localhost
@@ -28,6 +28,6 @@ services:
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=6candoeat!
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data

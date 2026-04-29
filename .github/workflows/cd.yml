@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main  # 배포를 원하는 브랜치로 설정
+      - feature/poldTest # 배포 테스트만 하는 브랜치
+  workflow_dispatch: # 일단 테스트용 수동 버튼 생성 추후 삭제
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -30,6 +32,10 @@ jobs:
           cache: 'gradle'
 
       # 2. 프로젝트 빌드 (테스트 제외하고 jar 파일 생성)
+      # gradlew 파일에 실행 권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 

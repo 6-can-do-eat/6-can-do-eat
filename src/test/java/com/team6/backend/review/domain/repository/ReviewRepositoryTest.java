@@ -2,7 +2,7 @@ package com.team6.backend.review.domain.repository;
 
 import com.team6.backend.address.domain.entity.Address;
 import com.team6.backend.address.domain.repository.AddressRepository;
-import com.team6.backend.address.presentation.dto.AddressRequest;
+import com.team6.backend.address.presentation.dto.request.AddressRequest;
 import com.team6.backend.area.domain.entity.Area;
 import com.team6.backend.area.domain.repository.AreaRepository;
 import com.team6.backend.category.domain.entity.Category;
@@ -56,7 +56,7 @@ class ReviewRepositoryTest {
         store = storeRepository.save(new Store(customer, category, area, "맛있는 치킨집", "서울시 강남구"));
         AddressRequest addrReq = new AddressRequest("서울시 강남구", "101호", false, "우리집");
         Address address = addressRepository.save(new Address(addrReq, customer));
-        order = orderRepository.save(Order.createOrder(customer, store, address, "빨리 배달해주세요"));
+        order = orderRepository.save(Order.createOrder(UUID.randomUUID(), customer, store, address, "빨리 배달해주세요"));
     }
 
     @Test
@@ -95,7 +95,7 @@ class ReviewRepositoryTest {
     @DisplayName("성공: 특정 가게의 리뷰 평균 별점을 계산한다.")
     void calculateAverageRatingByStoreId_Success() {
         // given: 리뷰 2개 생성 (각기 다른 주문 필요)
-        Order order2 = orderRepository.save(Order.createOrder(customer, store, order.getAddress(), "두번째 주문"));
+        Order order2 = orderRepository.save(Order.createOrder(UUID.randomUUID(), customer, store, order.getAddress(), "두번째 주문"));
 
         Review r1 = new Review();
         r1.createReview(order, 5, "5점 리뷰");
