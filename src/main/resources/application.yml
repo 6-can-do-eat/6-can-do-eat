@@ -37,3 +37,14 @@ gemini:
   base-url: https://generativelanguage.googleapis.com
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health  # health 엔드포인트를 웹에 노출
+  endpoint:
+    health:
+      show-details: when_authorized # 상세 정보는 인증 시에만 (보안)
+      probes:
+        enabled: true # Liveness, Readiness 프로브 활성화 (Cloud Run 연동 시 유리)
