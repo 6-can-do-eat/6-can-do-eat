@@ -1,27 +1,28 @@
 version: '3.8'
 
 services:
-  # 1. 우리팀 백엔드 서버
   app:
     build: .
     container_name: 6-canDoEat-app
-    ports:
-      - "8080:8080"
+    network_mode: "host"
     environment:
-      # application.yml의 설정을 컨테이너 환경에 맞춰 덮어씌움
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      # DB 및 Redis (기존 설정 유지)
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.71.128.3:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-
-      # Redis 설정 두 줄 추가
-      - REDIS_HOST=localhost
+      - REDIS_HOST=10.255.127.131
       - REDIS_PORT=6379
-    depends_on:
-      - db
 
-  # 2. 데이터베이스 (PostgreSQL)
+      # [중요] .env의 값을 컨테이너 내부로 전달하는 설정 추가
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_EXPIRATION=${JWT_ACCESS_TOKEN_EXPIRATION}
+      - JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_TOKEN_EXPIRATION}
+      - SERVER_PORT=${SERVER_PORT}
+      - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+
   db:
-    image: postgres:15 # 사용하시는 버전에 맞춰 변경 가능
+    image: postgres:15
     container_name: 6-can-db
     ports:
       - "5432:5432"
