@@ -1,4 +1,4 @@
-package com.team6.backend.payment.presetation.dto;
+package com.team6.backend.payment.presentation.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
