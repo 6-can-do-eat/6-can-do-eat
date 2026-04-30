@@ -6,6 +6,8 @@ import com.team6.backend.area.presentation.dto.request.UpdateAreaRequest;
 import com.team6.backend.area.presentation.dto.response.AreaResponse;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Tag(name = "Area", description = "운영 지역 관리 API")
 @RestController
 @RequestMapping("/api/v1/areas")
 @RequiredArgsConstructor
@@ -22,7 +25,7 @@ public class AreaController {
 
     private final AreaService areaService;
 
-    // 지역 등록
+    @Operation(summary = "운영 지역 등록")
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     @PostMapping
     public ResponseEntity<SuccessResponse<AreaResponse>> createArea(
@@ -32,7 +35,7 @@ public class AreaController {
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.CREATED, response));
     }
 
-    // 지역 목록 조회
+    @Operation(summary = "운영 지역 목록 조회")
     @GetMapping
     public ResponseEntity<SuccessResponse<Page<AreaResponse>>> getAreas(
             @RequestParam(required = false) String keyword,
@@ -45,7 +48,7 @@ public class AreaController {
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, response));
     }
 
-    // 지역 상세 조회
+    @Operation(summary = "운영 지역 상세 조회")
     @GetMapping("/{areaId}")
     public ResponseEntity<SuccessResponse<AreaResponse>> getArea(
             @PathVariable UUID areaId
@@ -54,7 +57,7 @@ public class AreaController {
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, response));
     }
 
-    // 지역 수정 - MASTER, MANAGER
+    @Operation(summary = "운영 지역 수정")
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     @PutMapping("/{areaId}")
     public ResponseEntity<SuccessResponse<AreaResponse>> updateArea(
@@ -65,7 +68,7 @@ public class AreaController {
         return ResponseEntity.ok(SuccessResponse.of(CommonSuccessCode.OK, response));
     }
 
-    // 지역 삭제 (소프트) - MASTER
+    @Operation(summary = "운영 지역 삭제 소프트 삭제)")
     @PreAuthorize("hasRole('MASTER')")
     @DeleteMapping("/{areaId}")
     public ResponseEntity<SuccessResponse<Void>> deleteArea(
