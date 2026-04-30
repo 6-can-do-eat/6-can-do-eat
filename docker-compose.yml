@@ -4,7 +4,8 @@ services:
   app:
     build: .
     container_name: 6-canDoEat-app
-    network_mode: "host"
+    ports:
+      - "8080:8080"
     environment:
       # DB 및 Redis (기존 설정 유지)
       - SPRING_DATASOURCE_URL=jdbc:postgresql://10.71.128.3:5432/postgres
