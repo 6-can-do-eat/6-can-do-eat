@@ -47,7 +47,7 @@ Spring Boot 기반 음식점 배달 플랫폼 백엔드
 ---
 
 ### 배포 주소
-- **Backend**: `http://34.64.50.251:8080`
+- **Backend**: `https://six-can-do-eat-223565983316.asia-northeast3.run.app/`
 
 ---
 
