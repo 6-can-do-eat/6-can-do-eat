@@ -1,11 +1,11 @@
-package com.team6.backend.payment.presetation;
+package com.team6.backend.payment.presentation;
 
 import com.team6.backend.global.infrastructure.config.security.util.SecurityUtils;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
 import com.team6.backend.payment.application.PaymentService;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
-import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
-import com.team6.backend.payment.presetation.dto.PaymentResponse;
+import com.team6.backend.payment.presentation.dto.PaymentConfirmRequest;
+import com.team6.backend.payment.presentation.dto.PaymentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

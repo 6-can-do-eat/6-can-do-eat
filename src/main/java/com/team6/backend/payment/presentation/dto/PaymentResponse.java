@@ -1,6 +1,5 @@
-package com.team6.backend.payment.presetation.dto;
+package com.team6.backend.payment.presentation.dto;
 
-import com.team6.backend.order.presentation.dto.OrderResponse;
 import com.team6.backend.payment.domain.Payment;
 import com.team6.backend.payment.domain.PaymentStatus;
 import lombok.AccessLevel;

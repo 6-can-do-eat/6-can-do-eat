@@ -2,11 +2,10 @@ package com.team6.backend.payment.infrastructure;
 
 import com.team6.backend.global.infrastructure.exception.ApplicationException;
 import com.team6.backend.global.infrastructure.exception.CommonErrorCode;
-import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentConfirmResponse;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentRequest;
 import com.team6.backend.payment.infrastructure.dto.TossPaymentResponse;
-import com.team6.backend.payment.presetation.dto.PaymentConfirmRequest;
+import com.team6.backend.payment.presentation.dto.PaymentConfirmRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
