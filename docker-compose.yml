@@ -8,11 +8,11 @@ services:
       - "8080:8080"
     environment:
       # DB 및 Redis (기존 설정 유지)
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.71.128.3:5432/postgres
-      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=10.255.127.131
-      - REDIS_PORT=6379
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
       # [중요] .env의 값을 컨테이너 내부로 전달하는 설정 추가
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
