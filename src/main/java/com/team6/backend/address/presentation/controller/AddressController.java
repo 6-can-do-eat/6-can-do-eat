@@ -6,6 +6,8 @@ import com.team6.backend.address.presentation.dto.response.AddressResponse;
 import com.team6.backend.address.presentation.dto.request.AddressUpdateRequest;
 import com.team6.backend.global.infrastructure.response.CommonSuccessCode;
 import com.team6.backend.global.infrastructure.response.SuccessResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+@Tag(name = "Address", description = "배송지 관리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
@@ -23,6 +26,7 @@ public class AddressController {
     private final AddressService addressService;
 
     /* 배송지 생성 */
+    @Operation(summary = "배송지 생성")
     @PostMapping("/addresses")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<AddressResponse>> createAddress(@RequestBody AddressRequest request) {
@@ -33,6 +37,7 @@ public class AddressController {
     }
 
     /* 배송지 삭제 (소프트) */
+    @Operation(summary = "배송지 삭제 (소프트 삭제)")
     @DeleteMapping("/addresses/{adId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
     public ResponseEntity<Void> deleteAddress(@PathVariable UUID adId) {
@@ -41,6 +46,7 @@ public class AddressController {
     }
 
     /* 배송지 수정 */
+    @Operation(summary = "배송지 수정")
     @PutMapping("/addresses/{adId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<AddressResponse>> updateAddress(@PathVariable UUID adId, @RequestBody AddressUpdateRequest request) {
@@ -50,6 +56,7 @@ public class AddressController {
     }
 
     /* 내 배송지 목록 조회 */
+    @Operation(summary = "배송지 목록 조회")
     @GetMapping("/users/{userId}/addresses")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
     public ResponseEntity<SuccessResponse<Page<AddressResponse>>> getAddresses(
@@ -65,6 +72,7 @@ public class AddressController {
     }
 
     /* 배송지 상세 조회 */
+    @Operation(summary = "배송지 상세 조회")
     @GetMapping("/addresses/{adId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<AddressResponse>> getAddressById(@PathVariable UUID adId) {
@@ -73,6 +81,7 @@ public class AddressController {
     }
 
     /* 기본 배송지 설정 */
+    @Operation(summary = "기본 배송지 설정")
     @PatchMapping("/addresses/{adId}/default")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<SuccessResponse<AddressResponse>> updateDefaultAddress(

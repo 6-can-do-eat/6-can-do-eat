@@ -88,6 +88,11 @@ public class ReviewController {
                     @Parameter(name = "size", description = "페이지 당 데이터 개수"),
                     @Parameter(name = "sortBy", description = "정렬 필드 (createdAt, rating 등)"),
                     @Parameter(name = "isAsc", description = "오름차순 여부 (false 시 최신순/높은순)")
+            },
+            responses = {
+                @ApiResponse(responseCode = "200", description = "조회 성공"),
+                @ApiResponse(responseCode = "404", description = "가게 없음",
+                        content = @Content(examples = @ExampleObject(value = "{\"code\": \"STORE_NOT_FOUND\", \"status\": \"NOT_FOUND\", \"message\": \"존재하지 않는 가게입니다.\"}")))
             }
     )
     @GetMapping("/stores/{storeId}/reviews")
@@ -109,11 +114,12 @@ public class ReviewController {
                     "- 삭제된 리뷰는 수정할 수 없습니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "수정 성공"),
-                    @ApiResponse(responseCode = "400", description = "입력값 오류 (평점 1~5 범위를 벗어남 등)"),
+                    @ApiResponse(responseCode = "400", description = "입력값 오류",
+                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"REVIEW_400\", \"status\": \"BAD_REQUEST\", \"message\": \"평점은 반드시 입력해야 합니다.\"}"))),
                     @ApiResponse(responseCode = "403", description = "권한 부족",
-                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"REVIEW_FORBIDDEN\", \"status\": \"FORBIDDEN\", \"message\": \"리뷰 수정 권한이 없습니다.\"}"))),
+                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"REVIEW_403\", \"status\": \"FORBIDDEN\", \"message\": \"리뷰 수정 권한이 없습니다.\"}"))),
                     @ApiResponse(responseCode = "404", description = "리뷰 없음",
-                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"REVIEW_NOT_FOUND\", \"status\": \"NOT_FOUND\", \"message\": \"수정할 리뷰를 찾을 수 없습니다.\"}")))
+                            content = @Content(examples = @ExampleObject(value = "{\"code\": \"REVIEW_404\", \"status\": \"NOT_FOUND\", \"message\": \"수정할 리뷰를 찾을 수 없습니다.\"}")))
             }
     )
     @PreAuthorize("hasRole('CUSTOMER')")
