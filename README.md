@@ -394,7 +394,7 @@ src/main/java
 <details>
 <summary>인프라 다이어그램</summary>
 
-추가예정
+![인프라 다이어그램](docs/images/diagram.png)
 
 </details>
 
@@ -402,9 +402,35 @@ src/main/java
 
 ### 실행 방법
 
+#### 환경 변수 설정 (.env)
+프로젝트 루트 디렉토리에 `.env` 파일을 생성하고 아래 내용을 서비스 환경에 맞게 입력합니다.
+
+```env
+JWT_SECRET_KEY=your_secret_key_here
+JWT_ACCESS_TOKEN_EXPIRATION=1800000
+JWT_REFRESH_TOKEN_EXPIRATION=604800000
+DB_URL=jdbc:postgresql://localhost:5432/your_db
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+REDIS_HOST=localhost
+REDIS_PORT=6379
+SERVER_PORT=8080
+TOSS_SECRET_KEY=your_toss_key_here
+```
+
 #### 로컬 실행
 
 ```bash
 ./gradlew build
 ./gradlew bootRun
+```
+
+#### Docker Compose를 이용한 실행
+
+```bash
+# 서비스 실행
+docker-compose up -d
+
+# 종료
+docker-compose down
 ```
